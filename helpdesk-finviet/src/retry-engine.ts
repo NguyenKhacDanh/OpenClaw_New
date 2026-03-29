@@ -36,7 +36,7 @@ export type FailoverConfig = {
   fallbackProviders: string[];
   currentProvider: string;
   failoverAt?: string;
-  failbackDelayMs: number;   // Thời gian chờ trước khi thử lại primary
+  failbackDelayMs: number; // Thời gian chờ trước khi thử lại primary
 };
 
 export type MissedMessage = {
@@ -110,10 +110,7 @@ export class RetryEngine {
   private failover: FailoverConfig;
   private policy: RetryPolicy;
 
-  constructor(
-    failoverConfig?: Partial<FailoverConfig>,
-    retryPolicy?: Partial<RetryPolicy>,
-  ) {
+  constructor(failoverConfig?: Partial<FailoverConfig>, retryPolicy?: Partial<RetryPolicy>) {
     this.policy = { ...DEFAULT_RETRY_POLICY, ...retryPolicy };
     this.failover = {
       primaryProvider: "groq/meta-llama/llama-4-scout-17b-16e-instruct",
@@ -167,11 +164,7 @@ export class RetryEngine {
   // Missed message recovery
   // -------------------------------------------------------------------------
 
-  recordMissedMessage(msg: {
-    channel: string;
-    sender: string;
-    content: string;
-  }): MissedMessage {
+  recordMissedMessage(msg: { channel: string; sender: string; content: string }): MissedMessage {
     const entry: MissedMessage = {
       id: `miss-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       ...msg,

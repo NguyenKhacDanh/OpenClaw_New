@@ -58,11 +58,7 @@
           "prefix": "🤖"
         },
         "tools": {
-          "alsoAllow": [
-            "knowledge_search",
-            "ticket_create",
-            "ticket_status"
-          ]
+          "alsoAllow": ["knowledge_search", "ticket_create", "ticket_status"]
         }
       }
     ]
