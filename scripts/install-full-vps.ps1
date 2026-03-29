@@ -181,6 +181,21 @@ $configContent = @"
       "dangerouslyAllowHostHeaderOriginFallback": true,
       "dangerouslyDisableDeviceAuth": true
     }
+  },
+  "channels": {
+    "zalouser": {
+      "enabled": true
+    },
+    "whatsapp": {
+      "enabled": true
+    },
+    "zalo": {
+      "enabled": true
+    }
+  },
+  "plugins": {
+    "enabled": true,
+    "allow": []
   }
 }
 "@
@@ -259,7 +274,7 @@ Write-Host "  http://${localIP}:${Port}/#token=${Token}" -ForegroundColor White
 Write-Host ""
 Write-Host "  TAT: Ctrl+C" -ForegroundColor DarkGray
 Write-Host "  CHAY LAI: cd $ProjectDir" -ForegroundColor DarkGray
-Write-Host "    `$env:OPENCLAW_SKIP_CHANNELS=`"1`"; node openclaw.mjs gateway run --bind lan --port $Port --force" -ForegroundColor DarkGray
+Write-Host "    node openclaw.mjs gateway run --bind lan --port $Port --force" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 Write-Host ""
