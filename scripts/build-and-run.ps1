@@ -106,7 +106,6 @@ Start-Sleep -Seconds 2
 
 # Set env
 Write-Host "[2/3] Khoi dong gateway tren port $Port..." -ForegroundColor Yellow
-$env:OPENCLAW_SKIP_CHANNELS = "1"
 
 Start-Process -FilePath "node" `
     -ArgumentList "openclaw.mjs", "gateway", "run", "--bind", "lan", "--port", "$Port", "--force" `
