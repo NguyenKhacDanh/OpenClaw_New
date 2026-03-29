@@ -11,6 +11,7 @@ $ErrorActionPreference = "Continue"
 $Port = 19001
 $Token = "80130a3a631f966a38d943e7ba21cebc2c2c6f46911b5a7b"
 $GroqApiKey = if ($env:GROQ_API_KEY) { $env:GROQ_API_KEY } else { Read-Host "Nhap Groq API Key" }
+$NvidiaApiKey = if ($env:NVIDIA_API_KEY) { $env:NVIDIA_API_KEY } else { Read-Host "Nhap NVIDIA API Key" }
 $ProjectDir = "D:\OpenClaw_New"
 $RepoUrl = "https://github.com/NguyenKhacDanh/OpenClaw_New.git"
 
@@ -197,7 +198,14 @@ $configContent = @"
   },
   "agents": {
     "defaults": {
-      "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct"
+      "model": {
+        "primary": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        "fallbacks": [
+          "groq/llama-3.3-70b-versatile",
+          "groq/llama-3.1-8b-instant",
+          "nvidia/nvidia/llama-3.1-nemotron-70b-instruct"
+        ]
+      }
     }
   },
   "tools": {
@@ -239,6 +247,7 @@ $modelsSource = Join-Path $ProjectDir "config-templates\models.json"
 if (Test-Path $modelsSource) {
     $modelsContent = Get-Content $modelsSource -Raw
     $modelsContent = $modelsContent -replace 'YOUR_GROQ_API_KEY_HERE', $GroqApiKey
+    $modelsContent = $modelsContent -replace 'YOUR_NVIDIA_API_KEY_HERE', $NvidiaApiKey
     $modelsTarget = Join-Path $agentDir "models.json"
     [System.IO.File]::WriteAllText($modelsTarget, $modelsContent, [System.Text.UTF8Encoding]::new($false))
     Write-Host "      -> models.json (Groq API) -> $agentDir" -ForegroundColor Green
@@ -252,15 +261,20 @@ $authProfilesPath = Join-Path $agentDir "auth-profiles.json"
 $authProfilesJson = @{
     version  = 1
     profiles = @{
-        "groq:default" = @{
+        "groq:default"   = @{
             type     = "api_key"
             provider = "groq"
             key      = $GroqApiKey
         }
+        "nvidia:default" = @{
+            type     = "api_key"
+            provider = "nvidia"
+            key      = $NvidiaApiKey
+        }
     }
 } | ConvertTo-Json -Depth 4
 [System.IO.File]::WriteAllText($authProfilesPath, $authProfilesJson, [System.Text.UTF8Encoding]::new($false))
-Write-Host "      -> auth-profiles.json (Groq API key) -> $agentDir" -ForegroundColor Green
+Write-Host "      -> auth-profiles.json (Groq + NVIDIA API keys) -> $agentDir" -ForegroundColor Green
 
 # Copy workspace IDENTITY.md neu chua co
 $wsDir = "$env:USERPROFILE\.openclaw\workspace"
