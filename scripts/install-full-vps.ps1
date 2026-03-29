@@ -176,6 +176,28 @@ else {
 # -----------------------------------------------------------
 # XONG!
 # -----------------------------------------------------------
+# Mo firewall cho port 19001
+Write-Host ""
+Write-Host "[*] Mo firewall port 19001..." -ForegroundColor Yellow
+try {
+    $existing = Get-NetFirewallRule -DisplayName "OpenClaw Gateway" -ErrorAction SilentlyContinue
+    if (!$existing) {
+        New-NetFirewallRule -DisplayName "OpenClaw Gateway" -Direction Inbound -Protocol TCP -LocalPort 19001 -Action Allow | Out-Null
+        Write-Host "      -> Firewall rule da tao!" -ForegroundColor Green
+    } else {
+        Write-Host "      -> Firewall rule da co san." -ForegroundColor Green
+    }
+} catch {
+    Write-Host "      -> Khong tu dong mo duoc firewall. Mo thu cong:" -ForegroundColor Yellow
+    Write-Host "         netsh advfirewall firewall add rule name='OpenClaw Gateway' dir=in action=allow protocol=TCP localport=19001" -ForegroundColor White
+}
+
+$localIP = $null
+try {
+    $localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.PrefixOrigin -ne "WellKnown" } | Select-Object -First 1).IPAddress
+} catch {}
+if (!$localIP) { $localIP = "IP_VPS" }
+
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host "  CAI DAT HOAN TAT!" -ForegroundColor Green
@@ -186,5 +208,5 @@ Write-Host "    cd D:\OpenClaw_New" -ForegroundColor White
 Write-Host "    powershell -ExecutionPolicy Bypass -File .\scripts\build-and-run.ps1 -RunOnly" -ForegroundColor White
 Write-Host ""
 Write-Host "  TRUY CAP:" -ForegroundColor Cyan
-Write-Host "    http://IP_VPS:19001/#token=$token" -ForegroundColor White
+Write-Host "    http://${localIP}:19001/#token=$token" -ForegroundColor White
 Write-Host ""

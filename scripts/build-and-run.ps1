@@ -104,7 +104,7 @@ Write-Host "[2/3] Khoi dong gateway tren port $Port..." -ForegroundColor Yellow
 $env:OPENCLAW_SKIP_CHANNELS = "1"
 
 Start-Process -FilePath "node" `
-    -ArgumentList "openclaw.mjs", "gateway", "run", "--bind", "loopback", "--port", "$Port", "--force" `
+    -ArgumentList "openclaw.mjs", "gateway", "run", "--bind", "0.0.0.0", "--port", "$Port", "--force" `
     -WorkingDirectory $ProjectRoot `
     -NoNewWindow `
     -RedirectStandardOutput $StdOut `
@@ -117,14 +117,20 @@ Start-Sleep -Seconds 5
 $listening = netstat -ano | findstr "$Port" | findstr "LISTENING"
 if ($listening) {
     $gwPid = ($listening -split '\s+')[-1]
+    # Get local IP for remote access URL
+    $localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.PrefixOrigin -ne "WellKnown" } | Select-Object -First 1).IPAddress
+    if (!$localIP) { $localIP = "YOUR_VPS_IP" }
+    $token = "80130a3a631f966a38d943e7ba21cebc2c2c6f46911b5a7b"
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
     Write-Host "  GATEWAY DANG CHAY!" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "  URL:   http://127.0.0.1:$Port" -ForegroundColor White
-    Write-Host "  PID:   $gwPid" -ForegroundColor White
-    Write-Host "  Logs:  $LogDir" -ForegroundColor White
+    Write-Host "  Local:   http://127.0.0.1:$Port" -ForegroundColor White
+    Write-Host "  Remote:  http://${localIP}:${Port}" -ForegroundColor Cyan
+    Write-Host "  Full:    http://${localIP}:${Port}/#token=${token}" -ForegroundColor Cyan
+    Write-Host "  PID:     $gwPid" -ForegroundColor White
+    Write-Host "  Logs:    $LogDir" -ForegroundColor White
     Write-Host ""
     Write-Host "  Tat gateway: .\scripts\build-and-run.ps1 -Stop" -ForegroundColor DarkGray
     Write-Host ""
