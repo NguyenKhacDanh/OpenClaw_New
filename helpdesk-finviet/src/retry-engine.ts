@@ -116,12 +116,13 @@ export class RetryEngine {
   ) {
     this.policy = { ...DEFAULT_RETRY_POLICY, ...retryPolicy };
     this.failover = {
-      primaryProvider: "groq/llama-4-scout-17b-16e-instruct",
+      primaryProvider: "groq/meta-llama/llama-4-scout-17b-16e-instruct",
       fallbackProviders: [
         "groq/llama-3.3-70b-versatile",
-        "github/gpt-4.1-mini",
+        "groq/llama-3.1-8b-instant",
+        "nvidia/nvidia/llama-3.1-nemotron-70b-instruct",
       ],
-      currentProvider: "groq/llama-4-scout-17b-16e-instruct",
+      currentProvider: "groq/meta-llama/llama-4-scout-17b-16e-instruct",
       failbackDelayMs: 5 * 60_000, // 5 phút
       ...failoverConfig,
     };
