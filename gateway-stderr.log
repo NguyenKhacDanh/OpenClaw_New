@@ -1,0 +1,7 @@
+2026-03-29T12:50:06.349+07:00 Config warnings:\n- plugins.entries.zalouser: plugin zalouser: duplicate plugin id detected; bundled plugin will be overridden by global plugin (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)
+[90m2026-03-29T12:50:06.671+07:00[39m [36m[gateway][39m [33m⚠️  gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true is enabled. Host-header origin fallback weakens origin checks and should only be used as break-glass.[39m
+[90m2026-03-29T12:50:06.811+07:00[39m [36m[gateway][39m [33msecurity warning: dangerous config flags enabled: gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true. Run `openclaw security audit`.[39m
+[90m2026-03-29T12:50:07.007+07:00[39m [36m[ws][39m [33msecurity warning: websocket origin accepted via Host-header fallback conn=5d95b64b-8136-43cf-b15b-5b6c87a84bf9 count=1 host=127.0.0.1:19001 origin=http://127.0.0.1:19001[39m
+[90m2026-03-29T12:50:07.008+07:00[39m [36m[gateway][39m [33msecurity metric: gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback accepted a websocket connect request[39m
+[90m2026-03-29T12:50:33.638+07:00[39m [36m[ws][39m [33msecurity warning: websocket origin accepted via Host-header fallback conn=e3eb4534-9701-4d83-ae32-c73266a3c3d0 count=2 host=127.0.0.1:19001 origin=http://127.0.0.1:19001[39m
+[90m2026-03-29T12:50:33.641+07:00[39m [36m[gateway][39m [33msecurity metric: gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback accepted a websocket connect request[39m

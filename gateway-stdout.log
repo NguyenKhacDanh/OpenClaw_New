@@ -1,0 +1,30 @@
+│
+◇  Config warnings ───────────────────────────────────────────────────╮
+│                                                                     │
+│  - plugins.entries.zalouser: plugin zalouser: duplicate plugin id   │
+│    detected; bundled plugin will be overridden by global plugin     │
+│    (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)  │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────╯
+[90m2026-03-29T12:50:06.405+07:00[39m [36m[gateway][39m [36mforce: no listeners on port 19001[39m
+[90m2026-03-29T12:50:06.653+07:00[39m [36m[gateway][39m [36m[plugins] duplicate plugin id detected; bundled plugin will be overridden by global plugin (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts) (plugin=zalouser, source=C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)[39m
+[90m2026-03-29T12:50:06.666+07:00[39m [35m[canvas][39m [36mhost mounted at http://127.0.0.1:19001/__openclaw__/canvas/ (root C:\Users\Administrator\.openclaw\canvas)[39m
+[90m2026-03-29T12:50:06.786+07:00[39m [36m[heartbeat][39m [36mstarted[39m
+[90m2026-03-29T12:50:06.789+07:00[39m [32m[health-monitor][39m [36mstarted (interval: 300s, startup-grace: 60s, channel-connect-grace: 120s)[39m
+[90m2026-03-29T12:50:06.805+07:00[39m [36m[gateway][39m [36magent model: groq/meta-llama/llama-4-scout-17b-16e-instruct[39m
+[90m2026-03-29T12:50:06.807+07:00[39m [36m[gateway][39m [36mlistening on ws://127.0.0.1:19001, ws://[::1]:19001 (PID 21364)[39m
+[90m2026-03-29T12:50:06.809+07:00[39m [36m[gateway][39m [36mlog file: \tmp\openclaw\openclaw-2026-03-29.log[39m
+[90m2026-03-29T12:50:06.989+07:00[39m [31m[gateway/channels][39m [36mskipping channel start (OPENCLAW_SKIP_CHANNELS=1 or OPENCLAW_SKIP_PROVIDERS=1)[39m
+[90m2026-03-29T12:50:07.047+07:00[39m [36m[ws][39m [36mwebchat connected conn=5d95b64b-8136-43cf-b15b-5b6c87a84bf9 remote=127.0.0.1 client=openclaw-control-ui webchat v2026.3.27[39m
+[90m2026-03-29T12:50:33.516+07:00[39m [36m[ws][39m [36mwebchat disconnected code=1001 reason=n/a conn=5d95b64b-8136-43cf-b15b-5b6c87a84bf9[39m
+[90m2026-03-29T12:50:33.666+07:00[39m [36m[ws][39m [36mwebchat connected conn=e3eb4534-9701-4d83-ae32-c73266a3c3d0 remote=127.0.0.1 client=openclaw-control-ui webchat v2026.3.27[39m
+2026-03-29T12:50:57.849+07:00 [nkd] ✓ Synced 6 KB docs → workspace AGENTS.md (7149 chars)
+2026-03-29T12:51:11.071+07:00 [DEBUG loginQrStart] typeof params: object
+2026-03-29T12:51:11.078+07:00 [DEBUG loginQrStart] params JSON: {"channel":"zalouser","force":false,"timeoutMs":30000}
+2026-03-29T12:51:11.082+07:00 [DEBUG loginQrStart] req.params JSON: {"channel":"zalouser","force":false,"timeoutMs":30000}
+2026-03-29T12:51:11.086+07:00 [DEBUG loginQrStart] rawChannel: zalouser
+2026-03-29T12:51:11.088+07:00 [DEBUG loginQrStart] channelId: zalouser
+[90m2026-03-29T12:51:11.462+07:00[39m [36m[ws][39m [36m⇄ res ✓ channels.loginQrStart 344ms conn=e3eb4534…c3d0 id=900588e5…6c5e[39m
+[90m2026-03-29T12:51:29.384+07:00[39m [36m[ws][39m [36m⇄ res ✓ channels.loginQrWait 17912ms conn=e3eb4534…c3d0 id=b04fbceb…cb2a[39m
+[90m2026-03-29T12:51:29.422+07:00[39m [31m[zalouser][39m [36m[default] starting zalouser provider (Agent)[39m
+[90m2026-03-29T12:51:29.586+07:00[39m [36m[ws][39m [36m⇄ res ✓ channels.status 195ms conn=e3eb4534…c3d0 id=d2b8280c…89f6[39m

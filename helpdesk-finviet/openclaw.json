@@ -1,0 +1,120 @@
+{
+  "$schema": "https://docs.openclaw.ai/schema/config.json",
+
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "groq/llama-4-scout-17b-16e-instruct",
+        "fallbacks": [
+          "groq/llama-3.3-70b-versatile",
+          "github/gpt-4.1-mini"
+        ]
+      },
+      "systemPrompt": "",
+      "workspace": "./workspace",
+      "thinkingDefault": "off",
+      "blockStreamingDefault": "on",
+      "typingMode": "thinking",
+      "timeoutSeconds": 120,
+      "maxConcurrent": 3,
+      "humanDelay": {
+        "mode": "natural",
+        "minMs": 500,
+        "maxMs": 1500
+      },
+      "heartbeat": {
+        "every": "5m",
+        "activeHours": {
+          "start": "07:00",
+          "end": "23:00",
+          "timezone": "Asia/Ho_Chi_Minh"
+        },
+        "lightContext": true,
+        "isolatedSession": true,
+        "suppressToolErrorWarnings": true
+      },
+      "compaction": {
+        "mode": "safeguard",
+        "customInstructions": "Luôn giữ nguyên ngôn ngữ tiếng Việt khi tóm tắt. Bảo toàn mã ticket, tên phần mềm, mã lỗi."
+      }
+    },
+    "list": [
+      {
+        "id": "helpdesk-finviet",
+        "default": true,
+        "name": "AI Helpdesk FinViet",
+        "workspace": "./workspace",
+        "model": {
+          "primary": "groq/llama-4-scout-17b-16e-instruct",
+          "fallbacks": [
+            "groq/llama-3.3-70b-versatile",
+            "github/gpt-4.1-mini"
+          ]
+        },
+        "identity": {
+          "name": "AI Helpdesk FinViet",
+          "prefix": "🤖"
+        },
+        "tools": {
+          "alsoAllow": [
+            "knowledge_search",
+            "ticket_create",
+            "ticket_status"
+          ]
+        }
+      }
+    ]
+  },
+
+  "providers": {
+    "groq": {
+      "apiKey": "${GROQ_API_KEY}"
+    },
+    "github": {
+      "apiKey": "${GITHUB_TOKEN}"
+    }
+  },
+
+  "whatsapp": {
+    "dmPolicy": "allowlist",
+    "allowFrom": [],
+    "groupPolicy": "allowlist",
+    "groups": {},
+    "outbound": {
+      "retry": {
+        "attempts": 3,
+        "minDelayMs": 500,
+        "maxDelayMs": 15000,
+        "jitter": 0.15
+      }
+    }
+  },
+
+  "zalouser": {
+    "dmPolicy": "allowlist",
+    "allowFrom": [],
+    "groupPolicy": "allowlist",
+    "groups": {},
+    "outbound": {
+      "retry": {
+        "attempts": 3,
+        "minDelayMs": 500,
+        "maxDelayMs": 15000,
+        "jitter": 0.15
+      }
+    }
+  },
+
+  "zalo": {
+    "dmPolicy": "allowlist",
+    "allowFrom": [],
+    "groupPolicy": "disabled"
+  },
+
+  "plugins": {
+    "whatsapp": { "enabled": true },
+    "zalouser": { "enabled": true },
+    "zalo": { "enabled": true },
+    "groq": { "enabled": true }
+  }
+}

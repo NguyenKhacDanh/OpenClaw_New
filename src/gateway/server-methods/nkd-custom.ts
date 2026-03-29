@@ -1,0 +1,662 @@
+/**
+ * NKD Custom gateway handlers — Knowledge Base, Agent Profile, Reports.
+ *
+ * All data lives under `helpdesk-finviet/data/` relative to the repo root.
+ * Operates directly on JSON files; no external HTTP server needed.
+ */
+
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { homedir } from "node:os";
+import { ErrorCodes, errorShape } from "../protocol/index.js";
+import { formatForLog } from "../ws-log.js";
+import type { GatewayRequestHandlers } from "./types.js";
+
+// ---------------------------------------------------------------------------
+// Data paths — resolve relative to process.cwd() (repo root)
+// ---------------------------------------------------------------------------
+
+function dataDir(): string {
+  const d = join(process.cwd(), "helpdesk-finviet", "data");
+  if (!existsSync(d)) mkdirSync(d, { recursive: true });
+  return d;
+}
+
+function kbDir(): string {
+  const d = join(dataDir(), "knowledge-base");
+  if (!existsSync(d)) mkdirSync(d, { recursive: true });
+  return d;
+}
+
+function kbIndexPath(): string {
+  return join(kbDir(), "kb-index.json");
+}
+
+function agentProfilePath(): string {
+  return join(dataDir(), "agent-profile.json");
+}
+
+function agentsMdPath(): string {
+  return join(process.cwd(), "helpdesk-finviet", "AGENTS.md");
+}
+
+// Path to the REAL workspace AGENTS.md that the bot reads at runtime
+function workspaceAgentsMdPath(): string {
+  // Check dev workspace first, fallback to production
+  const devPath = join(homedir(), ".openclaw-dev", "workspace", "AGENTS.md");
+  const prodPath = join(homedir(), ".openclaw", "workspace", "AGENTS.md");
+  // Prefer the one that exists; default to production
+  if (existsSync(devPath)) return devPath;
+  return prodPath;
+}
+
+/**
+ * Sync all KB documents into the workspace AGENTS.md that the bot reads.
+ * The AGENTS.md will contain:
+ *   1. Rules/instructions header from helpdesk-finviet/AGENTS.md (if it has rules)
+ *   2. All KB documents concatenated as structured sections
+ *
+ * This is called after every KB mutation (import, upload, delete).
+ */
+function syncKbToWorkspace(): void {
+  try {
+    const idx = loadKbIndex();
+    const profile = loadProfile();
+    const toneDesc: Record<string, string> = {
+      professional: "Chuyên nghiệp, lịch sự, đi thẳng vào vấn đề.",
+      friendly: "Thân thiện, gần gũi nhưng vẫn rõ ràng.",
+      casual: "Thoải mái, dễ hiểu, như đồng nghiệp hỗ trợ nhau.",
+    };
+
+    // Build the workspace AGENTS.md
+    const parts: string[] = [];
+
+    // Header — agent instructions
+    parts.push(`# AGENTS
+
+Bạn là **${profile.name}** — bot hỗ trợ Helpdesk IT của công ty **${profile.company}**.
+
+## QUY TẮC TRẢ LỜI
+- LUÔN ưu tiên trả lời dựa trên kiến thức bên dưới (Knowledge Base).
+- Nếu câu hỏi nằm trong KB: trả lời chính xác theo KB.
+- Nếu câu hỏi KHÔNG có trong KB: hướng dẫn liên hệ IT Support.
+- ${toneDesc[profile.tone] ?? toneDesc.professional}
+- Greeting: "${profile.greeting}"
+`);
+
+    // KB documents as knowledge sections
+    if (idx.documents.length > 0) {
+      parts.push(`## Kiến thức xử lý sự cố IT\n`);
+      for (let i = 0; i < idx.documents.length; i++) {
+        const doc = idx.documents[i];
+        // Skip documents that are clearly raw binary (PDF not extracted)
+        if (doc.content.startsWith("%PDF")) continue;
+        parts.push(`---\n`);
+        parts.push(`### ${i + 1}. ${doc.title}\n`);
+        if (doc.tags.length > 0) {
+          parts.push(`Tags: ${doc.tags.join(", ")}\n`);
+        }
+        parts.push(`${doc.content}\n`);
+      }
+    }
+
+    // Contact info
+    parts.push(`---
+
+## Thông tin liên hệ IT Support
+
+- **Email:** it.support@finviet.com.vn
+- **Service Portal:** https://hotro.finviet.com.vn
+- **Tự reset/unlock:** https://user.finviet.com.vn (cần wifi Finviet_Corp)
+`);
+
+    const finalContent = parts.join("\n");
+
+    // Write to workspace AGENTS.md
+    const wPath = workspaceAgentsMdPath();
+    const wDir = join(wPath, "..");
+    if (!existsSync(wDir)) mkdirSync(wDir, { recursive: true });
+    writeFileSync(wPath, finalContent, "utf-8");
+
+    // Also write to helpdesk-finviet/AGENTS.md for reference
+    writeFileSync(agentsMdPath(), finalContent, "utf-8");
+
+    console.log(`[nkd] ✓ Synced ${idx.documents.length} KB docs → workspace AGENTS.md (${finalContent.length} chars)`);
+  } catch (err) {
+    console.error("[nkd] ✗ Failed to sync KB to workspace:", err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// KB index helpers
+// ---------------------------------------------------------------------------
+
+type KBDocument = {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  source: string;
+  importedAt: string;
+  updatedAt: string;
+  hash: string;
+  charCount: number;
+};
+
+type KBIndex = {
+  version: number;
+  documents: KBDocument[];
+  lastUpdated: string;
+  totalDocuments: number;
+  totalChars: number;
+};
+
+function loadKbIndex(): KBIndex {
+  const p = kbIndexPath();
+  if (existsSync(p)) {
+    return JSON.parse(readFileSync(p, "utf-8")) as KBIndex;
+  }
+  return { version: 1, documents: [], lastUpdated: new Date().toISOString(), totalDocuments: 0, totalChars: 0 };
+}
+
+function saveKbIndex(idx: KBIndex): void {
+  idx.lastUpdated = new Date().toISOString();
+  idx.totalDocuments = idx.documents.length;
+  idx.totalChars = idx.documents.reduce((s, d) => s + d.charCount, 0);
+  writeFileSync(kbIndexPath(), JSON.stringify(idx, null, 2), "utf-8");
+}
+
+// ---------------------------------------------------------------------------
+// Agent profile helpers
+// ---------------------------------------------------------------------------
+
+type AgentProfile = {
+  name: string;
+  company: string;
+  greeting: string;
+  language: string;
+  tone: string;
+  scope: string;
+  ticketPrefix: string;
+};
+
+function loadProfile(): AgentProfile {
+  const p = agentProfilePath();
+  if (existsSync(p)) {
+    return JSON.parse(readFileSync(p, "utf-8")) as AgentProfile;
+  }
+  return {
+    name: "AI Helpdesk FinViet",
+    company: "FinViet",
+    greeting: "Xin chào! Tôi là AI Helpdesk FinViet 🤖. Tôi có thể hỗ trợ bạn vấn đề IT gì hôm nay?",
+    language: "vi",
+    tone: "professional",
+    scope: "IT Helpdesk: mạng, máy tính, phần mềm, tài khoản, bảo mật, email, Office 365",
+    ticketPrefix: "FV",
+  };
+}
+
+function saveProfile(profile: AgentProfile): void {
+  writeFileSync(agentProfilePath(), JSON.stringify(profile, null, 2), "utf-8");
+  // Sync to workspace — regenerates AGENTS.md with KB + profile
+  syncKbToWorkspace();
+}
+
+// Legacy function kept for compatibility — now delegates to syncKbToWorkspace
+function regenerateAgentsMd(_p: AgentProfile): void {
+  syncKbToWorkspace();
+}
+
+// ---------------------------------------------------------------------------
+// Search helpers (Vietnamese stop words, tokenizer, relevance)
+// ---------------------------------------------------------------------------
+
+const STOP_WORDS_VI = new Set([
+  "và", "hoặc", "của", "cho", "với", "trong", "ngoài", "là", "có", "không",
+  "được", "để", "từ", "đến", "này", "đó", "các", "một", "những", "thì",
+  "nhưng", "nếu", "khi", "như", "đã", "sẽ", "đang", "rất", "cũng",
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 2 && !STOP_WORDS_VI.has(w));
+}
+
+function searchDocs(
+  docs: KBDocument[],
+  query: string,
+  category?: string,
+  maxResults = 10,
+): { document: KBDocument; score: number; snippet: string }[] {
+  const keywords = tokenize(query);
+  if (keywords.length === 0) return [];
+
+  const results: { document: KBDocument; score: number; snippet: string }[] = [];
+
+  for (const doc of docs) {
+    if (category && doc.category !== category) continue;
+    let score = 0;
+    for (const kw of keywords) {
+      if (doc.title.toLowerCase().includes(kw)) score += 10;
+      else if (doc.tags.some((t) => t.toLowerCase().includes(kw))) score += 7;
+      else if (doc.content.toLowerCase().includes(kw)) score += 3;
+    }
+    if (score > 0) {
+      const pos = doc.content.toLowerCase().indexOf(keywords[0]);
+      const start = Math.max(0, pos - 80);
+      const snippet = doc.content.slice(start, start + 300).trim();
+      results.push({ document: doc, score, snippet });
+    }
+  }
+
+  results.sort((a, b) => b.score - a.score);
+  return results.slice(0, maxResults);
+}
+
+// ---------------------------------------------------------------------------
+// Ticket stats (read-only from tickets dir)
+// ---------------------------------------------------------------------------
+
+function loadTicketStats(): { total: number; open: number; closed: number; byChannel: Record<string, number> } {
+  const ticketsDir = join(dataDir(), "tickets");
+  const storePath = join(ticketsDir, "tickets.json");
+  if (!existsSync(storePath)) {
+    return { total: 0, open: 0, closed: 0, byChannel: {} };
+  }
+  try {
+    const store = JSON.parse(readFileSync(storePath, "utf-8"));
+    const tickets: any[] = store.tickets ?? [];
+    const open = tickets.filter((t) => t.status === "open" || t.status === "in-progress").length;
+    const byChannel: Record<string, number> = {};
+    for (const t of tickets) {
+      byChannel[t.channel ?? "unknown"] = (byChannel[t.channel ?? "unknown"] ?? 0) + 1;
+    }
+    return { total: tickets.length, open, closed: tickets.length - open, byChannel };
+  } catch {
+    return { total: 0, open: 0, closed: 0, byChannel: {} };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Gateway RPC Handlers
+// ---------------------------------------------------------------------------
+
+export const nkdCustomHandlers: GatewayRequestHandlers = {
+  // --- KB Stats ---
+  "nkd.kb.stats": async ({ respond }) => {
+    try {
+      const idx = loadKbIndex();
+      const byCategory: Record<string, number> = {};
+      for (const d of idx.documents) {
+        byCategory[d.category] = (byCategory[d.category] ?? 0) + 1;
+      }
+      respond(true, {
+        totalDocuments: idx.totalDocuments,
+        totalChars: idx.totalChars,
+        byCategory,
+        lastUpdated: idx.lastUpdated,
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- KB List ---
+  "nkd.kb.list": async ({ respond }) => {
+    try {
+      const idx = loadKbIndex();
+      const docs = idx.documents.map((d) => ({
+        id: d.id,
+        title: d.title,
+        category: d.category,
+        tags: d.tags,
+        source: d.source,
+        importedAt: d.importedAt,
+        charCount: d.charCount,
+      }));
+      respond(true, docs, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- KB Search ---
+  "nkd.kb.search": async ({ params, respond }) => {
+    try {
+      const q = String((params as { q?: string }).q ?? "");
+      const category = (params as { category?: string }).category;
+      const idx = loadKbIndex();
+      const results = searchDocs(idx.documents, q, category);
+      respond(true, results, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- KB Import Text ---
+  "nkd.kb.importText": async ({ params, respond }) => {
+    try {
+      const { title, content, category, tags } = params as {
+        title?: string;
+        content?: string;
+        category?: string;
+        tags?: string[];
+      };
+      if (!content?.trim()) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "content is required"));
+        return;
+      }
+      const idx = loadKbIndex();
+      const hash = createHash("sha256").update(content).digest("hex");
+      const existing = idx.documents.find((d) => d.hash === hash);
+      if (existing) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "Tài liệu đã tồn tại (trùng nội dung)"));
+        return;
+      }
+      const id = `kb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const now = new Date().toISOString();
+      const doc: KBDocument = {
+        id,
+        title: title?.trim() || content.split("\n")[0]?.slice(0, 100) || "Untitled",
+        content,
+        category: category || "general",
+        tags: tags ?? [],
+        source: "manual-input",
+        importedAt: now,
+        updatedAt: now,
+        hash,
+        charCount: content.length,
+      };
+      idx.documents.push(doc);
+      saveKbIndex(idx);
+      syncKbToWorkspace();
+      respond(true, { success: true, documentId: id }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- KB Upload (base64 file) ---
+  "nkd.kb.upload": async ({ params, respond }) => {
+    try {
+      const { filename, base64, category, tags, title } = params as {
+        filename?: string;
+        base64?: string;
+        category?: string;
+        tags?: string;
+        title?: string;
+      };
+      if (!filename || !base64) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "filename and base64 are required"));
+        return;
+      }
+
+      // Decode base64 → text (for simple text-based files)
+      const buf = Buffer.from(base64, "base64");
+      const ext = (filename.match(/\.[^.]+$/)?.[0] ?? "").toLowerCase();
+      let text = "";
+
+      if ([".txt", ".md", ".csv", ".json"].includes(ext)) {
+        text = buf.toString("utf-8");
+      } else if (ext === ".pdf") {
+        // Extract text from PDF using pdf-parse
+        try {
+          const pdfParse = (await import("pdf-parse")).default;
+          const result = await pdfParse(buf);
+          text = (result.text || "").trim();
+          if (!text) {
+            respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `PDF "${filename}" không chứa text (có thể là PDF scan/image). Hãy chuyển sang text trước khi import.`));
+            return;
+          }
+        } catch (pdfErr: any) {
+          respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể đọc PDF "${filename}": ${pdfErr?.message || "pdf-parse error"}. Hãy copy text thủ công và dùng Import Text.`));
+          return;
+        }
+      } else if ([".docx", ".doc", ".xlsx", ".xls"].includes(ext)) {
+        // Office formats — not supported for auto-extract
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Định dạng ${ext.toUpperCase()} chưa hỗ trợ extract text tự động. Hãy copy text từ file và dùng "Import Text".`));
+        return;
+      } else {
+        // For other formats, try reading as UTF-8
+        text = buf.toString("utf-8");
+      }
+
+      // Validate: reject if content looks like binary/PDF raw data
+      if (text.startsWith("%PDF") || /[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 500))) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `File "${filename}" chứa dữ liệu binary, không phải text. Hãy copy text thủ công và dùng "Import Text".`));
+        return;
+      }
+
+      if (!text.trim()) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể extract text từ file "${filename}"`));
+        return;
+      }
+
+      const idx = loadKbIndex();
+      const hash = createHash("sha256").update(text).digest("hex");
+      const existing = idx.documents.find((d) => d.hash === hash);
+      if (existing) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "Tài liệu đã tồn tại (trùng nội dung)"));
+        return;
+      }
+
+      const id = `kb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const now = new Date().toISOString();
+      const doc: KBDocument = {
+        id,
+        title: title?.trim() || text.split("\n")[0]?.slice(0, 100) || filename,
+        content: text,
+        category: category || "general",
+        tags: tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+        source: filename,
+        importedAt: now,
+        updatedAt: now,
+        hash,
+        charCount: text.length,
+      };
+      idx.documents.push(doc);
+      saveKbIndex(idx);
+      syncKbToWorkspace();
+      respond(true, {
+        success: true,
+        documentId: id,
+        metadata: { format: ext.replace(".", ""), extractedChars: text.length },
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- KB Delete ---
+  "nkd.kb.delete": async ({ params, respond }) => {
+    try {
+      const docId = String((params as { id?: string }).id ?? "");
+      if (!docId) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "id is required"));
+        return;
+      }
+      const idx = loadKbIndex();
+      const i = idx.documents.findIndex((d) => d.id === docId);
+      if (i === -1) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "Document not found"));
+        return;
+      }
+      idx.documents.splice(i, 1);
+      saveKbIndex(idx);
+      syncKbToWorkspace();
+      respond(true, { success: true }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Agent Profile Get ---
+  "nkd.agent.profile": async ({ respond }) => {
+    try {
+      respond(true, loadProfile(), undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Agent Profile Save ---
+  "nkd.agent.profileSave": async ({ params, respond }) => {
+    try {
+      const current = loadProfile();
+      const updates = params as Partial<AgentProfile>;
+      const merged = { ...current, ...updates };
+      saveProfile(merged);
+      respond(true, { success: true, profile: merged }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Agent Prompt (AGENTS.md content) ---
+  "nkd.agent.prompt": async ({ respond }) => {
+    try {
+      const p = agentsMdPath();
+      const content = existsSync(p) ? readFileSync(p, "utf-8") : "";
+      respond(true, { content }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Agent Prompt Save (edit AGENTS.md directly) ---
+  "nkd.agent.promptSave": async ({ params, respond }) => {
+    try {
+      const content = String((params as { content?: string }).content ?? "");
+      if (!content.trim()) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "content is required"));
+        return;
+      }
+      // Write to both helpdesk AGENTS.md and workspace AGENTS.md
+      writeFileSync(agentsMdPath(), content, "utf-8");
+      const wPath = workspaceAgentsMdPath();
+      const wDir = join(wPath, "..");
+      if (!existsSync(wDir)) mkdirSync(wDir, { recursive: true });
+      writeFileSync(wPath, content, "utf-8");
+      console.log(`[nkd] ✓ Saved prompt to workspace AGENTS.md (${content.length} chars)`);
+      respond(true, { success: true }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- KB Raw Data (full JSON for inspection) ---
+  "nkd.kb.rawData": async ({ respond }) => {
+    try {
+      const idx = loadKbIndex();
+      // Also gather agent profile and AGENTS.md
+      const profile = loadProfile();
+      const agentsMd = existsSync(agentsMdPath()) ? readFileSync(agentsMdPath(), "utf-8") : "";
+      const ticketStats = loadTicketStats();
+      respond(true, {
+        kbIndex: idx,
+        agentProfile: profile,
+        agentsMd,
+        ticketStats,
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- KB Raw Data Save (edit JSON directly) ---
+  "nkd.kb.rawDataSave": async ({ params, respond }) => {
+    try {
+      const data = params as {
+        kbIndex?: KBIndex;
+        agentProfile?: AgentProfile;
+        agentsMd?: string;
+      };
+      // Save KB index if provided
+      if (data.kbIndex) {
+        const idx = data.kbIndex;
+        idx.lastUpdated = new Date().toISOString();
+        idx.totalDocuments = idx.documents?.length ?? 0;
+        idx.totalChars = (idx.documents ?? []).reduce((s, d) => s + (d.charCount ?? d.content?.length ?? 0), 0);
+        writeFileSync(kbIndexPath(), JSON.stringify(idx, null, 2), "utf-8");
+        console.log(`[nkd] ✓ Saved KB index: ${idx.totalDocuments} docs, ${idx.totalChars} chars`);
+      }
+      // Save agent profile if provided
+      if (data.agentProfile) {
+        writeFileSync(agentProfilePath(), JSON.stringify(data.agentProfile, null, 2), "utf-8");
+        console.log("[nkd] ✓ Saved agent profile");
+      }
+      // Save AGENTS.md if provided
+      if (typeof data.agentsMd === "string") {
+        writeFileSync(agentsMdPath(), data.agentsMd, "utf-8");
+        // Also write to workspace
+        const wPath = workspaceAgentsMdPath();
+        const wDir = join(wPath, "..");
+        if (!existsSync(wDir)) mkdirSync(wDir, { recursive: true });
+        writeFileSync(wPath, data.agentsMd, "utf-8");
+        console.log(`[nkd] ✓ Saved AGENTS.md (${data.agentsMd.length} chars)`);
+      }
+      // Sync KB to workspace after any save
+      syncKbToWorkspace();
+      respond(true, { success: true }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Ticket Stats ---
+  "nkd.reports.tickets": async ({ respond }) => {
+    try {
+      respond(true, loadTicketStats(), undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Sync KB to Workspace (manual trigger) ---
+  "nkd.kb.syncWorkspace": async ({ respond }) => {
+    try {
+      syncKbToWorkspace();
+      const wPath = workspaceAgentsMdPath();
+      const content = existsSync(wPath) ? readFileSync(wPath, "utf-8") : "";
+      respond(true, {
+        success: true,
+        workspacePath: wPath,
+        chars: content.length,
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Fix PDF raw documents: remove binary content from KB ---
+  "nkd.kb.fixPdfRaw": async ({ respond }) => {
+    try {
+      const idx = loadKbIndex();
+      const removed: string[] = [];
+      idx.documents = idx.documents.filter((doc) => {
+        if (doc.content.startsWith("%PDF")) {
+          removed.push(doc.title);
+          return false;
+        }
+        return true;
+      });
+      if (removed.length > 0) {
+        saveKbIndex(idx);
+        syncKbToWorkspace();
+      }
+      respond(true, {
+        success: true,
+        removedCount: removed.length,
+        removedTitles: removed,
+        remainingDocs: idx.documents.length,
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+};

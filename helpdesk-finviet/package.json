@@ -1,0 +1,22 @@
+{
+  "name": "helpdesk-finviet",
+  "version": "1.0.0",
+  "description": "AI Helpdesk FinViet - Trợ lý IT tự động qua WhatsApp & Zalo",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "npx tsx src/index.ts",
+    "dev": "npx tsx watch src/index.ts",
+    "import-kb": "npx tsx scripts/import-kb.ts",
+    "report": "npx tsx scripts/generate-report.ts"
+  },
+  "dependencies": {
+    "tsx": "^4.7.0",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.8.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/pdf-parse": "^1.1.4"
+  }
+}
