@@ -2,8 +2,7 @@
 # OpenClaw Gateway - CAI DAT + KHOI DONG TU ZERO (Windows VPS)
 # ============================================================
 # 1 LENH DUY NHAT:
-#   [Net.ServicePointManager]::SecurityProtocol  Write-Host "  CHAY LAI: cd $ProjectDir" -ForegroundColor DarkGray
-Write-Host "    node openclaw.mjs gateway run --bind lan --port $Port --force" -ForegroundColor DarkGray [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/NguyenKhacDanh/OpenClaw_New/main/scripts/install-full-vps.ps1" -OutFile "D:\install.ps1" -UseBasicParsing; powershell -ExecutionPolicy Bypass -File D:\install.ps1
+#   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/NguyenKhacDanh/OpenClaw_New/main/scripts/install-full-vps.ps1" -OutFile "D:\install.ps1" -UseBasicParsing; powershell -ExecutionPolicy Bypass -File D:\install.ps1
 # ============================================================
 
 $ErrorActionPreference = "Continue"
