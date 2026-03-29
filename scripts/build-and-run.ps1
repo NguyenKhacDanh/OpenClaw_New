@@ -19,6 +19,11 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $ProjectRoot
 
+# Ensure Node.js, pnpm, Git in PATH
+foreach ($p in @("C:\Program Files\nodejs", "C:\Program Files\Git\cmd", "$env:APPDATA\npm", "$env:LOCALAPPDATA\pnpm")) {
+    if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = $env:Path + ";$p" }
+}
+
 $LogDir = Join-Path $ProjectRoot "logs"
 if (!(Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
 
@@ -104,7 +109,7 @@ Write-Host "[2/3] Khoi dong gateway tren port $Port..." -ForegroundColor Yellow
 $env:OPENCLAW_SKIP_CHANNELS = "1"
 
 Start-Process -FilePath "node" `
-    -ArgumentList "openclaw.mjs", "gateway", "run", "--bind", "0.0.0.0", "--port", "$Port", "--force" `
+    -ArgumentList "openclaw.mjs", "gateway", "run", "--bind", "lan", "--port", "$Port", "--force" `
     -WorkingDirectory $ProjectRoot `
     -NoNewWindow `
     -RedirectStandardOutput $StdOut `
