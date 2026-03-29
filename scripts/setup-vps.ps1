@@ -200,4 +200,5 @@ Write-Host "  HOAC BUILD + CHAY:" -ForegroundColor Cyan
 Write-Host "    .\scripts\build-and-run.ps1" -ForegroundColor White
 Write-Host ""
 Write-Host "  TRUY CAP:" -ForegroundColor Cyan
-Write-Host "    http://127.0.0.1:19001/#token=$token" -Foregr
+Write-Host "    http://127.0.0.1:19001/#token=$token" -ForegroundColor White
+Write-Host ""

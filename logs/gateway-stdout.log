@@ -1,0 +1,19 @@
+│
+◇  Config warnings ───────────────────────────────────────────────────╮
+│                                                                     │
+│  - plugins.entries.zalouser: plugin zalouser: duplicate plugin id   │
+│    detected; bundled plugin will be overridden by global plugin     │
+│    (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)  │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────╯
+[90m2026-03-29T12:55:05.141+07:00[39m [36m[gateway][39m [36mforce: no listeners on port 19001[39m
+[90m2026-03-29T12:55:05.353+07:00[39m [36m[gateway][39m [36m[plugins] duplicate plugin id detected; bundled plugin will be overridden by global plugin (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts) (plugin=zalouser, source=C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)[39m
+[90m2026-03-29T12:55:05.366+07:00[39m [35m[canvas][39m [36mhost mounted at http://127.0.0.1:19001/__openclaw__/canvas/ (root C:\Users\Administrator\.openclaw\canvas)[39m
+[90m2026-03-29T12:55:05.474+07:00[39m [36m[heartbeat][39m [36mstarted[39m
+[90m2026-03-29T12:55:05.477+07:00[39m [32m[health-monitor][39m [36mstarted (interval: 300s, startup-grace: 60s, channel-connect-grace: 120s)[39m
+[90m2026-03-29T12:55:05.491+07:00[39m [36m[gateway][39m [36magent model: groq/meta-llama/llama-4-scout-17b-16e-instruct[39m
+[90m2026-03-29T12:55:05.493+07:00[39m [36m[gateway][39m [36mlistening on ws://127.0.0.1:19001, ws://[::1]:19001 (PID 2848)[39m
+[90m2026-03-29T12:55:05.494+07:00[39m [36m[gateway][39m [36mlog file: \tmp\openclaw\openclaw-2026-03-29.log[39m
+[90m2026-03-29T12:55:05.642+07:00[39m [31m[gateway/channels][39m [36mskipping channel start (OPENCLAW_SKIP_CHANNELS=1 or OPENCLAW_SKIP_PROVIDERS=1)[39m
+[90m2026-03-29T12:55:05.742+07:00[39m [36m[ws][39m [36mwebchat connected conn=ddfce2c1-bb97-47d2-9c48-16b704ae13a4 remote=127.0.0.1 client=openclaw-control-ui webchat v2026.3.27[39m
+[90m2026-03-29T12:55:07.902+07:00[39m [36m[ws][39m [36m⇄ res ✓ health 2112ms conn=ddfce2c1…13a4 id=c505b9d6…975b[39m
