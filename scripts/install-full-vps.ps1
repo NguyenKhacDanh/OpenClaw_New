@@ -23,18 +23,20 @@ try { $gv = git --version 2>$null; if ($gv) { $gitOk = $true } } catch {}
 
 if ($gitOk) {
     Write-Host "      -> Git da co: $gv" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      -> Dang tai Git..." -ForegroundColor Yellow
     $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.2/Git-2.47.1.2-64-bit.exe"
     $gitFile = "$env:TEMP\Git-Install.exe"
     Invoke-WebRequest -Uri $gitUrl -OutFile $gitFile -UseBasicParsing
     Write-Host "      -> Dang cai Git (silent)..." -ForegroundColor Yellow
-    Start-Process -FilePath $gitFile -ArgumentList "/VERYSILENT","/NORESTART","/NOCANCEL","/SP-","/CLOSEAPPLICATIONS","/RESTARTAPPLICATIONS","/COMPONENTS=icons,ext\reg\shellhere,assoc,assoc_sh" -Wait
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") + ";C:\Program Files\Git\cmd"
+    Start-Process -FilePath $gitFile -ArgumentList "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS", "/COMPONENTS=icons,ext\reg\shellhere,assoc,assoc_sh" -Wait
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\Git\cmd"
     try { $gv = git --version 2>$null } catch { $gv = $null }
     if ($gv) {
         Write-Host "      -> $gv - OK!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "      -> LOI: Khong cai duoc Git! Cai thu cong: https://git-scm.com/download/win" -ForegroundColor Red
         exit 1
     }
@@ -48,25 +50,28 @@ $nodeOk = $false
 try {
     $nv = node --version 2>$null
     if ($nv) {
-        $major = [int]($nv -replace 'v','').Split('.')[0]
+        $major = [int]($nv -replace 'v', '').Split('.')[0]
         if ($major -ge 22) { $nodeOk = $true }
     }
-} catch {}
+}
+catch {}
 
 if ($nodeOk) {
     Write-Host "      -> Node.js $nv da co - OK!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      -> Dang tai Node.js v22.22.1..." -ForegroundColor Yellow
     $nodeUrl = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-x64.msi"
     $nodeFile = "$env:TEMP\node-v22.22.1-x64.msi"
     Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeFile -UseBasicParsing
     Write-Host "      -> Dang cai Node.js (silent)..." -ForegroundColor Yellow
-    Start-Process msiexec.exe -ArgumentList "/i",$nodeFile,"/qn","/norestart" -Wait
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") + ";C:\Program Files\Git\cmd"
+    Start-Process msiexec.exe -ArgumentList "/i", $nodeFile, "/qn", "/norestart" -Wait
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\Git\cmd"
     try { $nv = node --version 2>$null } catch { $nv = $null }
     if ($nv) {
         Write-Host "      -> Node.js $nv - OK!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "      -> LOI: Khong cai duoc Node.js! Cai thu cong: https://nodejs.org" -ForegroundColor Red
         exit 1
     }
@@ -81,14 +86,16 @@ try { $pv = pnpm --version 2>$null; if ($pv) { $pnpmOk = $true } } catch {}
 
 if ($pnpmOk) {
     Write-Host "      -> pnpm v$pv da co - OK!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      -> Dang cai pnpm@10.32.1..." -ForegroundColor Yellow
     npm install -g pnpm@10.32.1 2>&1 | Out-Null
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") + ";C:\Program Files\Git\cmd"
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\Git\cmd"
     try { $pv = pnpm --version 2>$null } catch { $pv = $null }
     if ($pv) {
         Write-Host "      -> pnpm v$pv - OK!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "      -> LOI: Khong cai duoc pnpm! Chay thu cong: npm install -g pnpm@10.32.1" -ForegroundColor Red
         exit 1
     }
@@ -104,7 +111,8 @@ if (Test-Path "D:\OpenClaw_New") {
     Write-Host "      -> Thu muc da ton tai, dang pull moi nhat..." -ForegroundColor Yellow
     Set-Location "D:\OpenClaw_New"
     git pull origin main 2>&1
-} else {
+}
+else {
     git clone https://github.com/NguyenKhacDanh/OpenClaw_New.git 2>&1
     Set-Location "D:\OpenClaw_New"
 }
@@ -132,8 +140,8 @@ foreach ($dir in @("$env:USERPROFILE\.openclaw", "$env:USERPROFILE\.openclaw-dev
     $cfgFile = Join-Path $dir "openclaw.json"
     $cfgJson = @{
         gateway = @{
-            auth = @{
-                mode = "token"
+            auth      = @{
+                mode  = "token"
                 token = $token
             }
             controlUi = @{
@@ -159,7 +167,8 @@ pnpm ui:build 2>&1 | Select-Object -Last 3
 
 if (Test-Path "D:\OpenClaw_New\dist\control-ui\index.html") {
     Write-Host "      -> Build OK!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      -> LOI BUILD! Chay lai: npx tsdown ; pnpm ui:build" -ForegroundColor Red
     exit 1
 }
