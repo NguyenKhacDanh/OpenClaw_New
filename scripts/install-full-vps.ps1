@@ -1,23 +1,38 @@
 # ============================================================
-# OpenClaw Gateway - CAI DAT TU ZERO CHO VPS MOI (Windows)
+# OpenClaw Gateway - CAI DAT + KHOI DONG TU ZERO (Windows VPS)
 # ============================================================
-# CACH DUNG: Luu file nay vao VPS, vi du D:\install.ps1
-# Roi chay: powershell -ExecutionPolicy Bypass -File D:\install.ps1
+# 1 LENH DUY NHAT:
+#   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/NguyenKhacDanh/OpenClaw_New/main/scripts/install-full-vps.ps1" -OutFile "D:\install.ps1" -UseBasicParsing; powershell -ExecutionPolicy Bypass -File D:\install.ps1
 # ============================================================
 
 $ErrorActionPreference = "Continue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+$Port = 19001
+$Token = "80130a3a631f966a38d943e7ba21cebc2c2c6f46911b5a7b"
+$ProjectDir = "D:\OpenClaw_New"
+$RepoUrl = "https://github.com/NguyenKhacDanh/OpenClaw_New.git"
+
+# --- Helper: Refresh PATH ---
+function Refresh-Path {
+    $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+    $extras = @("C:\Program Files\nodejs", "C:\Program Files\Git\cmd", "$env:APPDATA\npm", "$env:LOCALAPPDATA\pnpm")
+    $all = ($machinePath + ";" + $userPath + ";" + ($extras -join ";"))
+    $env:Path = $all
+}
+
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  OPENCLAW GATEWAY - CAI DAT TU ZERO" -ForegroundColor Cyan  
+Write-Host "  OPENCLAW GATEWAY - CAI DAT + KHOI DONG TU ZERO" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# -----------------------------------------------------------
+# ============================================================
 # BUOC 1: Cai Git
-# -----------------------------------------------------------
-Write-Host "[1/7] Kiem tra Git..." -ForegroundColor Yellow
+# ============================================================
+Write-Host "[1/9] Kiem tra Git..." -ForegroundColor Yellow
+Refresh-Path
 $gitOk = $false
 try { $gv = git --version 2>$null; if ($gv) { $gitOk = $true } } catch {}
 
@@ -31,21 +46,22 @@ else {
     Invoke-WebRequest -Uri $gitUrl -OutFile $gitFile -UseBasicParsing
     Write-Host "      -> Dang cai Git (silent)..." -ForegroundColor Yellow
     Start-Process -FilePath $gitFile -ArgumentList "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS", "/COMPONENTS=icons,ext\reg\shellhere,assoc,assoc_sh" -Wait
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\Git\cmd"
+    Refresh-Path
     try { $gv = git --version 2>$null } catch { $gv = $null }
     if ($gv) {
         Write-Host "      -> $gv - OK!" -ForegroundColor Green
     }
     else {
-        Write-Host "      -> LOI: Khong cai duoc Git! Cai thu cong: https://git-scm.com/download/win" -ForegroundColor Red
+        Write-Host "      -> LOI: Khong cai duoc Git!" -ForegroundColor Red
         exit 1
     }
 }
 
-# -----------------------------------------------------------
+# ============================================================
 # BUOC 2: Cai Node.js 22
-# -----------------------------------------------------------
-Write-Host "[2/7] Kiem tra Node.js..." -ForegroundColor Yellow
+# ============================================================
+Write-Host "[2/9] Kiem tra Node.js..." -ForegroundColor Yellow
+Refresh-Path
 $nodeOk = $false
 try {
     $nv = node --version 2>$null
@@ -53,11 +69,10 @@ try {
         $major = [int]($nv -replace 'v', '').Split('.')[0]
         if ($major -ge 22) { $nodeOk = $true }
     }
-}
-catch {}
+} catch {}
 
 if ($nodeOk) {
-    Write-Host "      -> Node.js $nv da co - OK!" -ForegroundColor Green
+    Write-Host "      -> Node.js $nv - OK!" -ForegroundColor Green
 }
 else {
     Write-Host "      -> Dang tai Node.js v22.22.1..." -ForegroundColor Yellow
@@ -66,71 +81,108 @@ else {
     Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeFile -UseBasicParsing
     Write-Host "      -> Dang cai Node.js (silent)..." -ForegroundColor Yellow
     Start-Process msiexec.exe -ArgumentList "/i", $nodeFile, "/qn", "/norestart" -Wait
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\Git\cmd"
+    Refresh-Path
     try { $nv = node --version 2>$null } catch { $nv = $null }
     if ($nv) {
         Write-Host "      -> Node.js $nv - OK!" -ForegroundColor Green
     }
     else {
-        Write-Host "      -> LOI: Khong cai duoc Node.js! Cai thu cong: https://nodejs.org" -ForegroundColor Red
+        Write-Host "      -> LOI: Khong cai duoc Node.js!" -ForegroundColor Red
         exit 1
     }
 }
 
-# -----------------------------------------------------------
+# ============================================================
 # BUOC 3: Cai pnpm
-# -----------------------------------------------------------
-Write-Host "[3/7] Kiem tra pnpm..." -ForegroundColor Yellow
+# ============================================================
+Write-Host "[3/9] Kiem tra pnpm..." -ForegroundColor Yellow
+Refresh-Path
 $pnpmOk = $false
 try { $pv = pnpm --version 2>$null; if ($pv) { $pnpmOk = $true } } catch {}
 
 if ($pnpmOk) {
-    Write-Host "      -> pnpm v$pv da co - OK!" -ForegroundColor Green
+    Write-Host "      -> pnpm v$pv - OK!" -ForegroundColor Green
 }
 else {
     Write-Host "      -> Dang cai pnpm@10.32.1..." -ForegroundColor Yellow
     npm install -g pnpm@10.32.1 2>&1 | Out-Null
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\Git\cmd"
+    Refresh-Path
     try { $pv = pnpm --version 2>$null } catch { $pv = $null }
     if ($pv) {
         Write-Host "      -> pnpm v$pv - OK!" -ForegroundColor Green
     }
     else {
-        Write-Host "      -> LOI: Khong cai duoc pnpm! Chay thu cong: npm install -g pnpm@10.32.1" -ForegroundColor Red
+        Write-Host "      -> LOI: Khong cai duoc pnpm!" -ForegroundColor Red
         exit 1
     }
 }
 
-# -----------------------------------------------------------
-# BUOC 4: Clone code
-# -----------------------------------------------------------
-Write-Host "[4/7] Clone code ve D:\OpenClaw_New..." -ForegroundColor Yellow
-Set-Location D:\
+# ============================================================
+# BUOC 4: Fix PATH vinh vien
+# ============================================================
+Write-Host "[4/9] Fix PATH vinh vien..." -ForegroundColor Yellow
+$currentMachinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+$pathsToAdd = @("C:\Program Files\nodejs", "C:\Program Files\Git\cmd", "$env:APPDATA\npm")
+$changed = $false
+foreach ($p in $pathsToAdd) {
+    if ($currentMachinePath -notlike "*$p*") {
+        $currentMachinePath = $currentMachinePath.TrimEnd(";") + ";$p"
+        $changed = $true
+    }
+}
+if ($changed) {
+    [System.Environment]::SetEnvironmentVariable("Path", $currentMachinePath, "Machine")
+    Write-Host "      -> PATH da cap nhat vinh vien!" -ForegroundColor Green
+} else {
+    Write-Host "      -> PATH da dung san." -ForegroundColor Green
+}
+Refresh-Path
 
-if (Test-Path "D:\OpenClaw_New") {
+# ============================================================
+# BUOC 5: Clone / Pull code
+# ============================================================
+Write-Host "[5/9] Clone code ve $ProjectDir..." -ForegroundColor Yellow
+
+if (Test-Path $ProjectDir) {
     Write-Host "      -> Thu muc da ton tai, dang pull moi nhat..." -ForegroundColor Yellow
-    Set-Location "D:\OpenClaw_New"
-    git pull origin main 2>&1
+    Set-Location $ProjectDir
+    git pull origin main 2>&1 | Out-Null
 }
 else {
-    git clone https://github.com/NguyenKhacDanh/OpenClaw_New.git 2>&1
-    Set-Location "D:\OpenClaw_New"
+    Set-Location "D:\"
+    git clone $RepoUrl 2>&1 | Out-Null
+    Set-Location $ProjectDir
 }
 Write-Host "      -> Code OK!" -ForegroundColor Green
 
-# -----------------------------------------------------------
-# BUOC 5: pnpm install
-# -----------------------------------------------------------
-Write-Host "[5/7] Cai dependencies (pnpm install)..." -ForegroundColor Yellow
-pnpm install 2>&1 | Select-Object -Last 5
+# ============================================================
+# BUOC 6: pnpm install
+# ============================================================
+Write-Host "[6/9] Cai dependencies..." -ForegroundColor Yellow
+Set-Location $ProjectDir
+pnpm install 2>&1 | Select-Object -Last 3
 Write-Host "      -> Dependencies OK!" -ForegroundColor Green
 
-# -----------------------------------------------------------
-# BUOC 6: Tao config
-# -----------------------------------------------------------
-Write-Host "[6/7] Tao config openclaw..." -ForegroundColor Yellow
+# ============================================================
+# BUOC 7: Tao config (DAY DU CAC FIX)
+# ============================================================
+Write-Host "[7/9] Tao config openclaw..." -ForegroundColor Yellow
 
-$token = "80130a3a631f966a38d943e7ba21cebc2c2c6f46911b5a7b"
+$configContent = @"
+{
+  "gateway": {
+    "mode": "local",
+    "auth": {
+      "mode": "token",
+      "token": "$Token"
+    },
+    "controlUi": {
+      "dangerouslyAllowHostHeaderOriginFallback": true,
+      "dangerouslyDisableDeviceAuth": true
+    }
+  }
+}
+"@
 
 foreach ($dir in @("$env:USERPROFILE\.openclaw", "$env:USERPROFILE\.openclaw-dev")) {
     if (!(Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
@@ -138,26 +190,20 @@ foreach ($dir in @("$env:USERPROFILE\.openclaw", "$env:USERPROFILE\.openclaw-dev
     if (!(Test-Path $wsDir)) { New-Item -ItemType Directory -Path $wsDir -Force | Out-Null }
     
     $cfgFile = Join-Path $dir "openclaw.json"
-    $cfgJson = @{
-        gateway = @{
-            auth      = @{
-                mode  = "token"
-                token = $token
-            }
-            controlUi = @{
-                dangerouslyAllowHostHeaderOriginFallback = $true
-            }
-        }
-    } | ConvertTo-Json -Depth 10
-    $cfgJson | Set-Content $cfgFile -Encoding UTF8
+    # Ghi UTF-8 KHONG CO BOM (tranh loi JSON parse)
+    [System.IO.File]::WriteAllText($cfgFile, $configContent, [System.Text.UTF8Encoding]::new($false))
     Write-Host "      -> $cfgFile" -ForegroundColor Green
 }
-Write-Host "      -> Token: $token" -ForegroundColor Green
+Write-Host "      -> gateway.mode = local" -ForegroundColor Green
+Write-Host "      -> dangerouslyDisableDeviceAuth = true" -ForegroundColor Green
+Write-Host "      -> dangerouslyAllowHostHeaderOriginFallback = true" -ForegroundColor Green
+Write-Host "      -> Token: $Token" -ForegroundColor Green
 
-# -----------------------------------------------------------
-# BUOC 7: Build
-# -----------------------------------------------------------
-Write-Host "[7/7] Build server + UI..." -ForegroundColor Yellow
+# ============================================================
+# BUOC 8: Build server + UI
+# ============================================================
+Write-Host "[8/9] Build server + UI..." -ForegroundColor Yellow
+Set-Location $ProjectDir
 
 Write-Host "      -> Building server..." -ForegroundColor Yellow
 npx tsdown 2>&1 | Select-Object -Last 3
@@ -165,48 +211,59 @@ npx tsdown 2>&1 | Select-Object -Last 3
 Write-Host "      -> Building UI..." -ForegroundColor Yellow
 pnpm ui:build 2>&1 | Select-Object -Last 3
 
-if (Test-Path "D:\OpenClaw_New\dist\control-ui\index.html") {
+if (Test-Path "$ProjectDir\dist\control-ui\index.html") {
     Write-Host "      -> Build OK!" -ForegroundColor Green
 }
 else {
-    Write-Host "      -> LOI BUILD! Chay lai: npx tsdown ; pnpm ui:build" -ForegroundColor Red
+    Write-Host "      -> LOI BUILD!" -ForegroundColor Red
     exit 1
 }
 
-# -----------------------------------------------------------
-# XONG!
-# -----------------------------------------------------------
-# Mo firewall cho port 19001
-Write-Host ""
-Write-Host "[*] Mo firewall port 19001..." -ForegroundColor Yellow
+# ============================================================
+# BUOC 9: Firewall + Khoi dong Gateway
+# ============================================================
+Write-Host "[9/9] Firewall + Khoi dong gateway..." -ForegroundColor Yellow
+
+# Mo firewall
 try {
     $existing = Get-NetFirewallRule -DisplayName "OpenClaw Gateway" -ErrorAction SilentlyContinue
     if (!$existing) {
-        New-NetFirewallRule -DisplayName "OpenClaw Gateway" -Direction Inbound -Protocol TCP -LocalPort 19001 -Action Allow | Out-Null
-        Write-Host "      -> Firewall rule da tao!" -ForegroundColor Green
+        New-NetFirewallRule -DisplayName "OpenClaw Gateway" -Direction Inbound -Protocol TCP -LocalPort $Port -Action Allow | Out-Null
+        Write-Host "      -> Firewall: da mo port $Port" -ForegroundColor Green
     } else {
-        Write-Host "      -> Firewall rule da co san." -ForegroundColor Green
+        Write-Host "      -> Firewall: da co rule" -ForegroundColor Green
     }
 } catch {
-    Write-Host "      -> Khong tu dong mo duoc firewall. Mo thu cong:" -ForegroundColor Yellow
-    Write-Host "         netsh advfirewall firewall add rule name='OpenClaw Gateway' dir=in action=allow protocol=TCP localport=19001" -ForegroundColor White
+    Write-Host "      -> Firewall: mo thu cong port $Port" -ForegroundColor Yellow
 }
 
+# Kill gateway cu
+Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+
+# Lay IP
 $localIP = $null
 try {
     $localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.PrefixOrigin -ne "WellKnown" } | Select-Object -First 1).IPAddress
 } catch {}
-if (!$localIP) { $localIP = "IP_VPS" }
+if (!$localIP) { $localIP = "IP_CUA_VPS" }
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Green
-Write-Host "  CAI DAT HOAN TAT!" -ForegroundColor Green
+Write-Host "  HOAN TAT! GATEWAY DANG KHOI DONG..." -ForegroundColor Green
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  KHOI DONG GATEWAY:" -ForegroundColor Cyan
-Write-Host "    cd D:\OpenClaw_New" -ForegroundColor White
-Write-Host "    powershell -ExecutionPolicy Bypass -File .\scripts\build-and-run.ps1 -RunOnly" -ForegroundColor White
+Write-Host "  TRUY CAP TU TRINH DUYET:" -ForegroundColor Cyan
+Write-Host "  http://${localIP}:${Port}/#token=${Token}" -ForegroundColor White
 Write-Host ""
-Write-Host "  TRUY CAP:" -ForegroundColor Cyan
-Write-Host "    http://${localIP}:19001/#token=$token" -ForegroundColor White
+Write-Host "  TAT: Ctrl+C" -ForegroundColor DarkGray
+Write-Host "  CHAY LAI: cd $ProjectDir" -ForegroundColor DarkGray
+Write-Host "    `$env:OPENCLAW_SKIP_CHANNELS=`"1`"; node openclaw.mjs gateway run --bind lan --port $Port --force" -ForegroundColor DarkGray
 Write-Host ""
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
+Write-Host ""
+
+# Khoi dong gateway FOREGROUND (thay log realtime)
+Set-Location $ProjectDir
+$env:OPENCLAW_SKIP_CHANNELS = "1"
+& "node" "openclaw.mjs" "gateway" "run" "--bind" "lan" "--port" "$Port" "--force"
