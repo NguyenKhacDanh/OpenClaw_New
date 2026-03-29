@@ -10,6 +10,7 @@ $ErrorActionPreference = "Continue"
 
 $Port = 19001
 $Token = "80130a3a631f966a38d943e7ba21cebc2c2c6f46911b5a7b"
+$GroqApiKey = if ($env:GROQ_API_KEY) { $env:GROQ_API_KEY } else { Read-Host "Nhap Groq API Key" }
 $ProjectDir = "D:\OpenClaw_New"
 $RepoUrl = "https://github.com/NguyenKhacDanh/OpenClaw_New.git"
 
@@ -69,7 +70,8 @@ try {
         $major = [int]($nv -replace 'v', '').Split('.')[0]
         if ($major -ge 22) { $nodeOk = $true }
     }
-} catch {}
+}
+catch {}
 
 if ($nodeOk) {
     Write-Host "      -> Node.js $nv - OK!" -ForegroundColor Green
@@ -133,7 +135,8 @@ foreach ($p in $pathsToAdd) {
 if ($changed) {
     [System.Environment]::SetEnvironmentVariable("Path", $currentMachinePath, "Machine")
     Write-Host "      -> PATH da cap nhat vinh vien!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      -> PATH da dung san." -ForegroundColor Green
 }
 Refresh-Path
@@ -215,6 +218,36 @@ Write-Host "      -> dangerouslyAllowHostHeaderOriginFallback = true" -Foregroun
 Write-Host "      -> Token: $Token" -ForegroundColor Green
 
 # ============================================================
+# BUOC 7b: Copy models.json + workspace templates
+# ============================================================
+Write-Host "[7b/9] Cau hinh AI model (Groq)..." -ForegroundColor Yellow
+
+# Tao agent dir
+$agentDir = "$env:USERPROFILE\.openclaw\agents\main\agent"
+if (!(Test-Path $agentDir)) { New-Item -ItemType Directory -Path $agentDir -Force | Out-Null }
+
+# Copy models.json (Groq config) + inject API key
+$modelsSource = Join-Path $ProjectDir "config-templates\models.json"
+if (Test-Path $modelsSource) {
+    $modelsContent = Get-Content $modelsSource -Raw
+    $modelsContent = $modelsContent -replace 'YOUR_GROQ_API_KEY_HERE', $GroqApiKey
+    $modelsTarget = Join-Path $agentDir "models.json"
+    [System.IO.File]::WriteAllText($modelsTarget, $modelsContent, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "      -> models.json (Groq API) -> $agentDir" -ForegroundColor Green
+} else {
+    Write-Host "      -> CANH BAO: config-templates/models.json khong tim thay!" -ForegroundColor Yellow
+}
+
+# Copy workspace IDENTITY.md neu chua co
+$wsDir = "$env:USERPROFILE\.openclaw\workspace"
+if (!(Test-Path $wsDir)) { New-Item -ItemType Directory -Path $wsDir -Force | Out-Null }
+$identitySrc = Join-Path $ProjectDir "config-templates\IDENTITY.md"
+if ((Test-Path $identitySrc) -and !(Test-Path (Join-Path $wsDir "IDENTITY.md"))) {
+    Copy-Item $identitySrc (Join-Path $wsDir "IDENTITY.md") -Force
+    Write-Host "      -> IDENTITY.md -> workspace" -ForegroundColor Green
+}
+
+# ============================================================
 # BUOC 8: Build server + UI
 # ============================================================
 Write-Host "[8/9] Build server + UI..." -ForegroundColor Yellow
@@ -245,10 +278,12 @@ try {
     if (!$existing) {
         New-NetFirewallRule -DisplayName "OpenClaw Gateway" -Direction Inbound -Protocol TCP -LocalPort $Port -Action Allow | Out-Null
         Write-Host "      -> Firewall: da mo port $Port" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "      -> Firewall: da co rule" -ForegroundColor Green
     }
-} catch {
+}
+catch {
     Write-Host "      -> Firewall: mo thu cong port $Port" -ForegroundColor Yellow
 }
 
@@ -260,7 +295,8 @@ Start-Sleep -Seconds 2
 $localIP = $null
 try {
     $localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.PrefixOrigin -ne "WellKnown" } | Select-Object -First 1).IPAddress
-} catch {}
+}
+catch {}
 if (!$localIP) { $localIP = "IP_CUA_VPS" }
 
 Write-Host ""
