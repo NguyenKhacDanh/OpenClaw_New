@@ -195,6 +195,14 @@ $configContent = @"
       "enabled": true
     }
   },
+  "agents": {
+    "defaults": {
+      "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct"
+    }
+  },
+  "tools": {
+    "profile": "minimal"
+  },
   "plugins": {
     "enabled": true,
     "allow": []
@@ -234,9 +242,25 @@ if (Test-Path $modelsSource) {
     $modelsTarget = Join-Path $agentDir "models.json"
     [System.IO.File]::WriteAllText($modelsTarget, $modelsContent, [System.Text.UTF8Encoding]::new($false))
     Write-Host "      -> models.json (Groq API) -> $agentDir" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      -> CANH BAO: config-templates/models.json khong tim thay!" -ForegroundColor Yellow
 }
+
+# Tao auth-profiles.json (de gateway tim duoc API key)
+$authProfilesPath = Join-Path $agentDir "auth-profiles.json"
+$authProfilesJson = @{
+    version  = 1
+    profiles = @{
+        "groq:default" = @{
+            type     = "api_key"
+            provider = "groq"
+            key      = $GroqApiKey
+        }
+    }
+} | ConvertTo-Json -Depth 4
+[System.IO.File]::WriteAllText($authProfilesPath, $authProfilesJson, [System.Text.UTF8Encoding]::new($false))
+Write-Host "      -> auth-profiles.json (Groq API key) -> $agentDir" -ForegroundColor Green
 
 # Copy workspace IDENTITY.md neu chua co
 $wsDir = "$env:USERPROFILE\.openclaw\workspace"

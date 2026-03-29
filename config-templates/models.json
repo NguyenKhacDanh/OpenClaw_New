@@ -110,6 +110,32 @@
       "api": "openai-completions",
       "models": [
         {
+          "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+          "name": "Llama 4 Scout 17B (Groq) - PRIMARY",
+          "input": [
+            "text"
+          ],
+          "contextWindow": 131072,
+          "maxTokens": 8192,
+          "compat": {
+            "supportsStore": false,
+            "supportsDeveloperRole": false,
+            "supportsReasoningEffort": false,
+            "supportsUsageInStreaming": true,
+            "supportsTools": false,
+            "supportsStrictMode": false,
+            "maxTokensField": "max_tokens"
+          },
+          "reasoning": false,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "api": "openai-completions"
+        },
+        {
           "id": "llama-3.3-70b-versatile",
           "name": "Llama 3.3 70B (Groq)",
           "input": [
@@ -122,7 +148,7 @@
             "supportsDeveloperRole": false,
             "supportsReasoningEffort": false,
             "supportsUsageInStreaming": true,
-            "supportsTools": true,
+            "supportsTools": false,
             "supportsStrictMode": false,
             "maxTokensField": "max_tokens"
           },
@@ -148,33 +174,7 @@
             "supportsDeveloperRole": false,
             "supportsReasoningEffort": false,
             "supportsUsageInStreaming": true,
-            "supportsTools": true,
-            "supportsStrictMode": false,
-            "maxTokensField": "max_tokens"
-          },
-          "reasoning": false,
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "api": "openai-completions"
-        },
-        {
-          "id": "meta-llama/llama-4-scout-17b-16e-instruct",
-          "name": "Llama 4 Scout 17B (Groq)",
-          "input": [
-            "text"
-          ],
-          "contextWindow": 131072,
-          "maxTokens": 4096,
-          "compat": {
-            "supportsStore": false,
-            "supportsDeveloperRole": false,
-            "supportsReasoningEffort": false,
-            "supportsUsageInStreaming": true,
-            "supportsTools": true,
+            "supportsTools": false,
             "supportsStrictMode": false,
             "maxTokensField": "max_tokens"
           },
