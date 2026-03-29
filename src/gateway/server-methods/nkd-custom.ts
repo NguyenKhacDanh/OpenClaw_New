@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { ErrorCodes, errorShape } from "../protocol/index.js";
 import { formatForLog } from "../ws-log.js";
+import { scheduleGatewaySigusr1Restart } from "../../infra/restart.js";
 import type { GatewayRequestHandlers } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -654,6 +655,25 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         removedCount: removed.length,
         removedTitles: removed,
         remainingDocs: idx.documents.length,
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Restart Gateway (apply config changes) ---
+  "nkd.gateway.restart": async ({ respond }) => {
+    try {
+      const result = scheduleGatewaySigusr1Restart({
+        delayMs: 1000,
+        reason: "nkd.gateway.restart (UI button)",
+      });
+      console.log("[nkd] Gateway restart scheduled:", result);
+      respond(true, {
+        success: true,
+        message: "Gateway restart đã được lên lịch. Gateway sẽ khởi động lại trong vài giây.",
+        pid: result.pid,
+        delayMs: result.delayMs,
       }, undefined);
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));

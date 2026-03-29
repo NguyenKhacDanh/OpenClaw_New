@@ -160,8 +160,11 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
       <div class="nkd-toast" id="nkd-toast"></div>
 
       <div style="margin-bottom:24px;">
-        <h1 style="font-size:24px; display:flex; align-items:center; gap:10px;">🤖 NKD Custom — AI Helpdesk FinViet</h1>
-        <p style="color:var(--color-muted, #94a3b8); font-size:14px;">Quản lý Knowledge Base, Agent, Kênh liên lạc & Tickets — tất cả qua Gateway RPC</p>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <h1 style="font-size:24px; display:flex; align-items:center; gap:10px; margin:0;">🤖 NKD Custom — AI Helpdesk FinViet</h1>
+          <button class="nkd-btn nkd-btn-sm" style="background:#ef4444; color:#fff; margin-left:auto;" @click=${() => nkdRestartGateway()}>🔄 Restart Gateway</button>
+        </div>
+        <p style="color:var(--color-muted, #94a3b8); font-size:14px; margin-top:6px;">Quản lý Knowledge Base, Agent, Kênh liên lạc & Tickets — tất cả qua Gateway RPC</p>
       </div>
 
       <div class="nkd-tab-bar">
@@ -756,6 +759,26 @@ async function nkdLoadTicketStats(): Promise<void> {
     if (openEl) openEl.textContent = String(d.open ?? 0);
     if (resolvedEl) resolvedEl.textContent = String(d.closed ?? 0);
   } catch { /* zeros by default */ }
+}
+
+// ---------------------------------------------------------------------------
+// Gateway Restart — via gateway RPC (nkd.gateway.restart)
+// ---------------------------------------------------------------------------
+
+async function nkdRestartGateway(): Promise<void> {
+  if (!confirm("⚠️ Restart Gateway?\n\nGateway sẽ khởi động lại để áp dụng thay đổi config.\nKết nối sẽ bị ngắt tạm thời (~5-10 giây).")) return;
+  try {
+    nkdToast("🔄 Đang gửi lệnh restart gateway...");
+    const res = await rpc<{ success: boolean; message: string }>("nkd.gateway.restart");
+    nkdToast(`✅ ${res.message || "Gateway restart đã được lên lịch!"}`);
+  } catch (err: any) {
+    // Connection lost is expected during restart
+    if (err.message?.includes("disconnect") || err.message?.includes("close") || err.message?.includes("connection")) {
+      nkdToast("🔄 Gateway đang restart... Trang sẽ tự kết nối lại.");
+    } else {
+      nkdToast(`❌ Lỗi restart: ${err.message || "Unknown error"}`, true);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
