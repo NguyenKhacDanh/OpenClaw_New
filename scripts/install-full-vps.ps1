@@ -196,6 +196,21 @@ $configContent = @"
       "enabled": true
     }
   },
+  "whatsapp": {
+    "dmPolicy": "open",
+    "allowFrom": ["*"],
+    "groupPolicy": "open"
+  },
+  "zalouser": {
+    "dmPolicy": "open",
+    "allowFrom": ["*"],
+    "groupPolicy": "open"
+  },
+  "zalo": {
+    "dmPolicy": "open",
+    "allowFrom": ["*"],
+    "groupPolicy": "open"
+  },
   "agents": {
     "defaults": {
       "model": {

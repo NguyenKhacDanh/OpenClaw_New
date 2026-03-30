@@ -74,9 +74,9 @@
   },
 
   "whatsapp": {
-    "dmPolicy": "allowlist",
-    "allowFrom": [],
-    "groupPolicy": "allowlist",
+    "dmPolicy": "open",
+    "allowFrom": ["*"],
+    "groupPolicy": "open",
     "groups": {},
     "outbound": {
       "retry": {
@@ -89,9 +89,9 @@
   },
 
   "zalouser": {
-    "dmPolicy": "allowlist",
-    "allowFrom": [],
-    "groupPolicy": "allowlist",
+    "dmPolicy": "open",
+    "allowFrom": ["*"],
+    "groupPolicy": "open",
     "groups": {},
     "outbound": {
       "retry": {
@@ -104,9 +104,9 @@
   },
 
   "zalo": {
-    "dmPolicy": "allowlist",
-    "allowFrom": [],
-    "groupPolicy": "disabled"
+    "dmPolicy": "open",
+    "allowFrom": ["*"],
+    "groupPolicy": "open"
   },
 
   "plugins": {
