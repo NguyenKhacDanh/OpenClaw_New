@@ -46,13 +46,31 @@ fi
 # ── Step 1: Prompt API Keys ────────────────────────────────────
 header "Step 1: Nhập API Keys"
 
-read -rp "$(echo -e "${CYAN}Groq API Key: ${NC}")" GROQ_KEY
+# Hỗ trợ truyền key qua biến môi trường (cho automation)
+# hoặc nhập tay qua /dev/tty (cho curl | bash)
+GROQ_KEY="${GROQ_KEY:-}"
+NVIDIA_KEY="${NVIDIA_KEY:-}"
+
+if [[ -z "$GROQ_KEY" ]]; then
+  echo -en "${CYAN}Groq API Key: ${NC}"
+  read -r GROQ_KEY < /dev/tty
+fi
 if [[ -z "$GROQ_KEY" ]]; then
   err "Groq API Key không được để trống!"
+  err ""
+  err "Cách 1 — Tải script rồi chạy:"
+  err "  curl -fsSL https://raw.githubusercontent.com/NguyenKhacDanh/OpenClaw_New/main/scripts/deploy-docker-ubuntu.sh -o deploy.sh"
+  err "  sudo bash deploy.sh"
+  err ""
+  err "Cách 2 — Truyền key qua biến môi trường:"
+  err "  sudo GROQ_KEY='gsk_xxx' NVIDIA_KEY='nvapi-xxx' bash deploy.sh"
   exit 1
 fi
 
-read -rp "$(echo -e "${CYAN}NVIDIA API Key (Enter để bỏ qua): ${NC}")" NVIDIA_KEY
+if [[ -z "$NVIDIA_KEY" ]]; then
+  echo -en "${CYAN}NVIDIA API Key (Enter để bỏ qua): ${NC}"
+  read -r NVIDIA_KEY < /dev/tty || true
+fi
 
 echo ""
 log "API Keys đã lưu."
