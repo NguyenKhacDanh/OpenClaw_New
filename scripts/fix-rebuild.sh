@@ -24,17 +24,31 @@ warn()  { echo -e "${YELLOW}[!]${NC} $*"; }
 err()   { echo -e "${RED}[✗]${NC} $*" >&2; }
 info()  { echo -e "${CYAN}[→]${NC} $*"; }
 
-BUILD_DIR="${BUILD_DIR:-$HOME/openclaw-build}"
 CONTAINER="${CONTAINER:-openclaw-bot}"
 IMAGE="${IMAGE:-openclaw:v1}"
+
+# Auto-detect build dir: thử nhiều vị trí phổ biến
+if [ -n "${BUILD_DIR:-}" ]; then
+  : # Dùng BUILD_DIR từ env
+elif [ -d "/home/fv-admin/openclaw-build" ]; then
+  BUILD_DIR="/home/fv-admin/openclaw-build"
+elif [ -d "$HOME/openclaw-build" ]; then
+  BUILD_DIR="$HOME/openclaw-build"
+elif [ -d "/root/openclaw-build" ]; then
+  BUILD_DIR="/root/openclaw-build"
+else
+  # Tìm tự động
+  BUILD_DIR=$(find /home /root -maxdepth 2 -type d -name "openclaw-build" 2>/dev/null | head -1)
+fi
 
 echo -e "\n${CYAN}══════════════════════════════════════════${NC}"
 echo -e "${CYAN}  Fix entrypoint.sh + Rebuild image${NC}"
 echo -e "${CYAN}══════════════════════════════════════════${NC}\n"
 
 # ── Check build dir ──
-if [ ! -d "$BUILD_DIR" ]; then
-  err "Không tìm thấy $BUILD_DIR"
+if [ -z "$BUILD_DIR" ] || [ ! -d "$BUILD_DIR" ]; then
+  err "Không tìm thấy openclaw-build directory!"
+  err "Thử: BUILD_DIR=/đường/dẫn/tới/openclaw-build sudo bash fix-rebuild.sh"
   exit 1
 fi
 
