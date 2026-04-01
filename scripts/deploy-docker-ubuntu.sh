@@ -156,24 +156,24 @@ cat > "$DATA_DIR/openclaw.json" << JSONEOF
     }
   },
   "channels": {
-    "zalouser": { "enabled": true },
-    "whatsapp": { "enabled": true },
-    "zalo": { "enabled": true }
-  },
-  "whatsapp": {
-    "dmPolicy": "open",
-    "allowFrom": ["*"],
-    "groupPolicy": "open"
-  },
-  "zalouser": {
-    "dmPolicy": "open",
-    "allowFrom": ["*"],
-    "groupPolicy": "open"
-  },
-  "zalo": {
-    "dmPolicy": "open",
-    "allowFrom": ["*"],
-    "groupPolicy": "open"
+    "zalouser": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "open"
+    },
+    "whatsapp": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "open"
+    },
+    "zalo": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "open"
+    }
   },
   "agents": {
     "defaults": {

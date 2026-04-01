@@ -187,29 +187,23 @@ $configContent = @"
   },
   "channels": {
     "zalouser": {
-      "enabled": true
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "open"
     },
     "whatsapp": {
-      "enabled": true
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "open"
     },
     "zalo": {
-      "enabled": true
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "open"
     }
-  },
-  "whatsapp": {
-    "dmPolicy": "open",
-    "allowFrom": ["*"],
-    "groupPolicy": "open"
-  },
-  "zalouser": {
-    "dmPolicy": "open",
-    "allowFrom": ["*"],
-    "groupPolicy": "open"
-  },
-  "zalo": {
-    "dmPolicy": "open",
-    "allowFrom": ["*"],
-    "groupPolicy": "open"
   },
   "agents": {
     "defaults": {
