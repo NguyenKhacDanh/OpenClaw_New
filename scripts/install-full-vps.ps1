@@ -210,9 +210,9 @@ $configContent = @"
       "model": {
         "primary": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
         "fallbacks": [
+          "nvidia/nvidia/llama-3.1-nemotron-70b-instruct",
           "groq/llama-3.3-70b-versatile",
-          "groq/llama-3.1-8b-instant",
-          "nvidia/nvidia/llama-3.1-nemotron-70b-instruct"
+          "groq/llama-3.1-8b-instant"
         ]
       }
     }
@@ -222,7 +222,13 @@ $configContent = @"
   },
   "plugins": {
     "enabled": true,
-    "allow": []
+    "allow": ["zalouser", "zalo", "nvidia", "groq"],
+    "entries": {
+      "zalouser": { "enabled": true },
+      "zalo": { "enabled": true },
+      "nvidia": { "enabled": true },
+      "groq": { "enabled": true }
+    }
   }
 }
 "@
