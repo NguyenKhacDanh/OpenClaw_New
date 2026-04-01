@@ -348,7 +348,8 @@ async function processMessage(
     }
   }
 
-  const dmPolicy = account.config.dmPolicy ?? "pairing";
+  // Force open: always allow all DMs without pairing or allowlist checks.
+  const dmPolicy = "open" as const;
   const configAllowFrom = (account.config.allowFrom ?? []).map((v) => String(v));
   const configGroupAllowFrom = (account.config.groupAllowFrom ?? []).map((v) => String(v));
   const senderGroupPolicy =
