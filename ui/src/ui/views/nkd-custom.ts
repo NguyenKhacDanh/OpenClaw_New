@@ -172,6 +172,7 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
         <button class="nkd-tab-btn" id="nkd-subtab-agent" @click=${() => nkdSwitchSubtab("agent")}>⚙️ Agent Settings</button>
         <button class="nkd-tab-btn" id="nkd-subtab-channels" @click=${() => nkdSwitchSubtab("channels")}>📱 Channels & QR</button>
         <button class="nkd-tab-btn" id="nkd-subtab-tickets" @click=${() => nkdSwitchSubtab("tickets")}>📋 Tickets & Reports</button>
+        <button class="nkd-tab-btn" id="nkd-subtab-apikeys" @click=${() => nkdSwitchSubtab("apikeys")}>🔑 API Keys</button>
       </div>
 
       <!-- KB -->
@@ -333,6 +334,69 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
           </div>
         </div>
       </div>
+
+      <!-- API Keys Management -->
+      <div id="nkd-panel-apikeys" style="display:none;">
+        <div class="nkd-section">
+          <h2>🔑 Quản lý API Keys</h2>
+          <p style="color:var(--color-muted); font-size:13px; margin-bottom:16px;">
+            Quản lý API keys cho các AI provider. Thay đổi key sẽ có hiệu lực sau khi Restart Gateway.
+          </p>
+          <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+            <button class="nkd-btn nkd-btn-primary nkd-btn-sm" @click=${() => nkdRefreshApiKeys()}>🔄 Refresh</button>
+          </div>
+          <div id="nkd-apikey-list" style="margin-bottom:20px;">
+            <p style="color:var(--color-muted); text-align:center; padding:20px;">Đang tải...</p>
+          </div>
+          <div style="margin-top:8px; padding:16px; background:var(--color-bg); border-radius:8px; border:1px solid var(--color-border);">
+            <h3 style="font-size:15px; margin:0 0 12px 0;">➕ Thêm / Cập nhật API Key</h3>
+            <div class="nkd-form-row">
+              <div>
+                <label class="nkd-label">Provider</label>
+                <select class="nkd-select" id="nkd-ak-provider">
+                  <option value="groq">Groq</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="nvidia">NVIDIA</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="google">Google</option>
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="other">Khác...</option>
+                </select>
+              </div>
+              <div>
+                <label class="nkd-label">Profile</label>
+                <input class="nkd-input" type="text" id="nkd-ak-profile" value="default" placeholder="default">
+              </div>
+            </div>
+            <div id="nkd-ak-custom-provider-row" style="display:none; margin-bottom:10px;">
+              <label class="nkd-label">Tên provider (tùy chỉnh)</label>
+              <input class="nkd-input" type="text" id="nkd-ak-custom-provider" placeholder="vd: together, fireworks...">
+            </div>
+            <label class="nkd-label">API Key</label>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+              <input class="nkd-input" type="password" id="nkd-ak-key" placeholder="Paste API key vào đây..." style="flex:1;">
+              <button class="nkd-btn nkd-btn-sm" style="background:var(--color-border); color:var(--color-muted);" @click=${() => nkdToggleKeyVisibility()}>👁️</button>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="nkd-btn nkd-btn-success" @click=${() => nkdSaveApiKey()}>💾 Lưu API Key</button>
+              <span style="color:var(--color-muted); font-size:12px; align-self:center;">⚠️ Nhớ Restart Gateway sau khi đổi key</span>
+            </div>
+          </div>
+          <div style="margin-top:16px; padding:12px; background:var(--color-bg); border-radius:8px; border:1px solid var(--color-border);">
+            <h3 style="font-size:14px; margin:0 0 8px 0;">🔗 Tạo API Key mới</h3>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <a href="https://console.groq.com/keys" target="_blank" style="color:var(--color-accent); font-size:13px;">🟠 Groq Console → Tạo key miễn phí</a>
+              <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--color-accent); font-size:13px;">🟣 OpenRouter → Tạo key (có free models)</a>
+              <a href="https://build.nvidia.com/settings/api-keys" target="_blank" style="color:var(--color-accent); font-size:13px;">🟢 NVIDIA Build → API key miễn phí</a>
+              <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--color-accent); font-size:13px;">🔵 Anthropic Console → API key</a>
+              <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--color-accent); font-size:13px;">⚪ OpenAI Platform → API key</a>
+              <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--color-accent); font-size:13px;">🔴 Google AI Studio → API key</a>
+              <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:var(--color-accent); font-size:13px;">🟡 DeepSeek → API key</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -342,7 +406,7 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
 // ---------------------------------------------------------------------------
 
 function nkdSwitchSubtab(tab: string): void {
-  for (const p of ["kb", "agent", "channels", "tickets"]) {
+  for (const p of ["kb", "agent", "channels", "tickets", "apikeys"]) {
     const panel = document.getElementById(`nkd-panel-${p}`);
     const btn = document.getElementById(`nkd-subtab-${p}`);
     if (panel) panel.style.display = p === tab ? "block" : "none";
@@ -351,6 +415,7 @@ function nkdSwitchSubtab(tab: string): void {
   if (tab === "kb") nkdRefreshKB();
   if (tab === "agent") nkdLoadProfile();
   if (tab === "tickets") nkdLoadTicketStats();
+  if (tab === "apikeys") nkdRefreshApiKeys();
 }
 
 function nkdToast(msg: string, isError = false): void {
@@ -780,6 +845,111 @@ async function nkdRestartGateway(): Promise<void> {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// API Keys Management — via gateway RPC (nkd.apikey.*)
+// ---------------------------------------------------------------------------
+
+const PROVIDER_ICONS: Record<string, string> = {
+  groq: "🟠", openrouter: "🟣", nvidia: "🟢", anthropic: "🔵",
+  openai: "⚪", google: "🔴", deepseek: "🟡",
+};
+
+async function nkdRefreshApiKeys(): Promise<void> {
+  try {
+    const data = await rpc<{ profiles: Array<{ provider: string; profile: string; maskedKey: string }>; path: string }>("nkd.apikey.list");
+    const container = document.getElementById("nkd-apikey-list");
+    if (!container) return;
+    if (!data.profiles || data.profiles.length === 0) {
+      container.innerHTML = '<p style="color:var(--color-muted); text-align:center; padding:20px;">Chưa có API key nào. Thêm key bên dưới 👇</p>';
+      return;
+    }
+    container.innerHTML = `<div style="color:var(--color-muted); font-size:11px; margin-bottom:8px;">📂 File: <code style="background:var(--color-bg); padding:2px 6px; border-radius:4px;">${data.path}</code></div>` +
+      data.profiles.map((p) => {
+        const icon = PROVIDER_ICONS[p.provider] || "🔹";
+        return `<div class="nkd-doc-row" style="align-items:center;">
+          <span style="font-size:20px;">${icon}</span>
+          <span class="nkd-doc-title" style="min-width:100px;">${p.provider}</span>
+          <span class="nkd-doc-meta" style="min-width:60px;">:${p.profile}</span>
+          <code style="flex:1; font-size:13px; color:var(--color-muted); background:var(--color-bg); padding:4px 8px; border-radius:4px; font-family:monospace;">${p.maskedKey}</code>
+          <button class="nkd-btn nkd-btn-danger nkd-btn-sm nkd-ak-del-btn" style="padding:2px 8px; font-size:12px;" data-ak-provider="${p.provider}" data-ak-profile="${p.profile}">🗑️</button>
+        </div>`;
+      }).join("");
+
+    // Event delegation for delete buttons
+    container.onclick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const delBtn = target.closest(".nkd-ak-del-btn") as HTMLElement;
+      if (delBtn) {
+        e.stopPropagation();
+        const provider = delBtn.dataset.akProvider ?? "";
+        const profile = delBtn.dataset.akProfile ?? "";
+        nkdDeleteApiKey(provider, profile);
+      }
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Lỗi tải API keys";
+    const container = document.getElementById("nkd-apikey-list");
+    if (container) container.innerHTML = `<p style="color:#ef4444; text-align:center; padding:20px;">⚠️ ${msg}</p>`;
+  }
+}
+
+async function nkdSaveApiKey(): Promise<void> {
+  const providerSelect = document.getElementById("nkd-ak-provider") as HTMLSelectElement;
+  const customProviderInput = document.getElementById("nkd-ak-custom-provider") as HTMLInputElement;
+  const profileInput = document.getElementById("nkd-ak-profile") as HTMLInputElement;
+  const keyInput = document.getElementById("nkd-ak-key") as HTMLInputElement;
+
+  let provider = providerSelect?.value ?? "";
+  if (provider === "other") {
+    provider = customProviderInput?.value?.trim() ?? "";
+    if (!provider) { nkdToast("Vui lòng nhập tên provider!", true); return; }
+  }
+  const profile = profileInput?.value?.trim() || "default";
+  const apiKey = keyInput?.value?.trim() ?? "";
+
+  if (!apiKey) { nkdToast("Vui lòng nhập API key!", true); return; }
+
+  try {
+    await rpc("nkd.apikey.set", { provider, profile, apiKey });
+    nkdToast(`✅ Đã lưu API key cho ${provider}:${profile}`);
+    keyInput.value = "";
+    nkdRefreshApiKeys();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Lỗi lưu API key";
+    nkdToast(`❌ ${msg}`, true);
+  }
+}
+
+async function nkdDeleteApiKey(provider: string, profile: string): Promise<void> {
+  if (!confirm(`⚠️ Xóa API key cho ${provider}:${profile}?\n\nBạn sẽ cần thêm lại key sau nếu muốn dùng provider này.`)) return;
+  try {
+    await rpc("nkd.apikey.delete", { provider, profile });
+    nkdToast(`🗑️ Đã xóa API key: ${provider}:${profile}`);
+    nkdRefreshApiKeys();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Lỗi xóa";
+    nkdToast(`❌ ${msg}`, true);
+  }
+}
+
+function nkdToggleKeyVisibility(): void {
+  const input = document.getElementById("nkd-ak-key") as HTMLInputElement;
+  if (!input) return;
+  input.type = input.type === "password" ? "text" : "password";
+}
+
+// Handle "other" provider selection — show custom input
+document.addEventListener("change", (e: Event) => {
+  const target = e.target as HTMLElement;
+  if (target.id === "nkd-ak-provider") {
+    const select = target as HTMLSelectElement;
+    const customRow = document.getElementById("nkd-ak-custom-provider-row");
+    if (customRow) {
+      customRow.style.display = select.value === "other" ? "block" : "none";
+    }
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Auto-init

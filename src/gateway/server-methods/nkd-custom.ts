@@ -284,6 +284,79 @@ function loadTicketStats(): { total: number; open: number; closed: number; byCha
 }
 
 // ---------------------------------------------------------------------------
+// Auth profiles (API key management) helpers
+// ---------------------------------------------------------------------------
+
+function authProfilesPath(): string {
+  // Standard location: ~/.openclaw/agents/main/agent/auth-profiles.json
+  const p = join(homedir(), ".openclaw", "agents", "main", "agent", "auth-profiles.json");
+  return p;
+}
+
+type AuthProfile = {
+  provider: string;
+  profile: string;
+  apiKey: string;
+};
+
+function loadAuthProfiles(): AuthProfile[] {
+  const p = authProfilesPath();
+  if (!existsSync(p)) { return []; }
+  try {
+    const raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey?: string }>;
+    const result: AuthProfile[] = [];
+    for (const [key, value] of Object.entries(raw)) {
+      const [provider, profile] = key.split(":");
+      if (provider && profile && value?.apiKey) {
+        // Mask the key for display: show first 8 and last 4 chars
+        result.push({ provider, profile, apiKey: value.apiKey });
+      }
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+
+function maskApiKey(key: string): string {
+  if (key.length <= 12) { return "***"; }
+  return `${key.slice(0, 8)}...${key.slice(-4)}`;
+}
+
+function saveAuthProfile(provider: string, profile: string, apiKey: string): void {
+  const p = authProfilesPath();
+  let raw: Record<string, { apiKey: string }> = {};
+  if (existsSync(p)) {
+    try {
+      raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey: string }>;
+    } catch { /* start fresh */ }
+  }
+  const key = `${provider}:${profile}`;
+  raw[key] = { apiKey };
+  // Ensure parent dir exists
+  const dir = join(p, "..");
+  if (!existsSync(dir)) { mkdirSync(dir, { recursive: true }); }
+  writeFileSync(p, JSON.stringify(raw, null, 2), "utf-8");
+  console.log(`[nkd] ✓ Saved API key for ${key}`);
+}
+
+function deleteAuthProfile(provider: string, profile: string): boolean {
+  const p = authProfilesPath();
+  if (!existsSync(p)) { return false; }
+  try {
+    const raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey: string }>;
+    const key = `${provider}:${profile}`;
+    if (!(key in raw)) { return false; }
+    delete raw[key];
+    writeFileSync(p, JSON.stringify(raw, null, 2), "utf-8");
+    console.log(`[nkd] ✓ Deleted API key for ${key}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Gateway RPC Handlers
 // ---------------------------------------------------------------------------
 
@@ -418,10 +491,43 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
           respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể đọc PDF "${filename}": ${pdfErr?.message || "pdf-parse error"}. Hãy copy text thủ công và dùng Import Text.`));
           return;
         }
-      } else if ([".docx", ".doc", ".xlsx", ".xls"].includes(ext)) {
-        // Office formats — not supported for auto-extract
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Định dạng ${ext.toUpperCase()} chưa hỗ trợ extract text tự động. Hãy copy text từ file và dùng "Import Text".`));
-        return;
+      } else if ([".docx", ".doc"].includes(ext)) {
+        // Extract text from Word documents using mammoth
+        try {
+          const mammoth = await import("mammoth");
+          const result = await mammoth.extractRawText({ buffer: buf });
+          text = (result.value || "").trim();
+          if (!text) {
+            respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `File Word "${filename}" không chứa text. Hãy copy text thủ công và dùng "Import Text".`));
+            return;
+          }
+        } catch (docErr: any) {
+          respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể đọc file Word "${filename}": ${docErr?.message || "mammoth error"}. Hãy copy text thủ công và dùng "Import Text".`));
+          return;
+        }
+      } else if ([".xlsx", ".xls"].includes(ext)) {
+        // Extract text from Excel spreadsheets using xlsx (SheetJS)
+        try {
+          const XLSX = await import("xlsx");
+          const workbook = XLSX.read(buf, { type: "buffer" });
+          const sheetTexts: string[] = [];
+          for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            if (!sheet) { continue; }
+            const csv = XLSX.utils.sheet_to_csv(sheet, { FS: "\t", RS: "\n" });
+            if (csv.trim()) {
+              sheetTexts.push(`=== Sheet: ${sheetName} ===\n${csv.trim()}`);
+            }
+          }
+          text = sheetTexts.join("\n\n");
+          if (!text.trim()) {
+            respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `File Excel "${filename}" không chứa dữ liệu. Hãy copy text thủ công và dùng "Import Text".`));
+            return;
+          }
+        } catch (xlsErr: any) {
+          respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể đọc file Excel "${filename}": ${xlsErr?.message || "xlsx error"}. Hãy copy text thủ công và dùng "Import Text".`));
+          return;
+        }
       } else {
         // For other formats, try reading as UTF-8
         text = buf.toString("utf-8");
@@ -674,6 +780,68 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         message: "Gateway restart đã được lên lịch. Gateway sẽ khởi động lại trong vài giây.",
         pid: result.pid,
         delayMs: result.delayMs,
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- API Key List (masked) ---
+  "nkd.apikey.list": async ({ respond }) => {
+    try {
+      const profiles = loadAuthProfiles();
+      const masked = profiles.map((p) => ({
+        provider: p.provider,
+        profile: p.profile,
+        maskedKey: maskApiKey(p.apiKey),
+      }));
+      respond(true, { profiles: masked, path: authProfilesPath() }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- API Key Update (set/change key for a provider) ---
+  "nkd.apikey.set": async ({ params, respond }) => {
+    try {
+      const { provider, profile, apiKey } = params as {
+        provider?: string;
+        profile?: string;
+        apiKey?: string;
+      };
+      if (!provider || !apiKey) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "provider and apiKey are required"));
+        return;
+      }
+      saveAuthProfile(provider, profile || "default", apiKey);
+      respond(true, {
+        success: true,
+        message: `Đã cập nhật API key cho ${provider}:${profile || "default"}`,
+      }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- API Key Delete ---
+  "nkd.apikey.delete": async ({ params, respond }) => {
+    try {
+      const { provider, profile } = params as {
+        provider?: string;
+        profile?: string;
+      };
+      if (!provider) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "provider is required"));
+        return;
+      }
+      const deleted = deleteAuthProfile(provider, profile || "default");
+      if (!deleted) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không tìm thấy API key cho ${provider}:${profile || "default"}`));
+        return;
+      }
+      respond(true, {
+        success: true,
+        message: `Đã xóa API key cho ${provider}:${profile || "default"}`,
       }, undefined);
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
