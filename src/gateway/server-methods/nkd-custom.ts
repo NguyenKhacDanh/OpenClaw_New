@@ -458,11 +458,24 @@ function clearSession(sessionId: string): boolean {
 // ---------------------------------------------------------------------------
 // Auth profiles (API key management) helpers
 // ---------------------------------------------------------------------------
+// Gateway auth-profiles.json format (v1):
+// {
+//   "version": 1,
+//   "profiles": {
+//     "openai:default": { "provider": "openai", "key": "sk-...", "type": "api_key" },
+//     "groq:default":   { "provider": "groq",   "key": "gsk_...", "type": "api_key" }
+//   },
+//   "lastGood": { ... },
+//   "usageStats": { ... }
+// }
+// ---------------------------------------------------------------------------
 
 function authProfilesPath(): string {
-  // Standard location: ~/.openclaw/agents/main/agent/auth-profiles.json
-  const p = join(homedir(), ".openclaw", "agents", "main", "agent", "auth-profiles.json");
-  return p;
+  return join(homedir(), ".openclaw", "agents", "main", "agent", "auth-profiles.json");
+}
+
+function openclawConfigPath(): string {
+  return join(homedir(), ".openclaw", "openclaw.json");
 }
 
 type AuthProfile = {
@@ -471,25 +484,76 @@ type AuthProfile = {
   apiKey: string;
 };
 
-function loadAuthProfiles(): AuthProfile[] {
+// Gateway-native store shape
+interface AuthStoreV1 {
+  version: number;
+  profiles: Record<string, { provider?: string; key?: string; type?: string; token?: string }>;
+  lastGood?: Record<string, string>;
+  usageStats?: Record<string, unknown>;
+  order?: Record<string, string[]>;
+}
+
+function readAuthStore(): AuthStoreV1 {
   const p = authProfilesPath();
   if (!existsSync(p)) {
-    return [];
+    return { version: 1, profiles: {} };
   }
   try {
-    const raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey?: string }>;
-    const result: AuthProfile[] = [];
-    for (const [key, value] of Object.entries(raw)) {
-      const [provider, profile] = key.split(":");
-      if (provider && profile && value?.apiKey) {
-        // Mask the key for display: show first 8 and last 4 chars
-        result.push({ provider, profile, apiKey: value.apiKey });
+    const parsed = JSON.parse(readFileSync(p, "utf-8")) as Partial<AuthStoreV1>;
+    // Handle legacy flat format { "openai:default": { apiKey: "..." } }
+    if (!parsed.profiles && !parsed.version) {
+      // Migrate legacy format
+      const profiles: AuthStoreV1["profiles"] = {};
+      for (const [compositeKey, value] of Object.entries(parsed)) {
+        if (compositeKey.includes(":") && value && typeof value === "object") {
+          const [prov] = compositeKey.split(":");
+          const legacy = value as {
+            apiKey?: string;
+            key?: string;
+            provider?: string;
+            type?: string;
+          };
+          profiles[compositeKey] = {
+            provider: legacy.provider ?? prov,
+            key: legacy.key ?? legacy.apiKey,
+            type: legacy.type ?? "api_key",
+          };
+        }
       }
+      return { version: 1, profiles };
     }
-    return result;
+    return {
+      version: parsed.version ?? 1,
+      profiles: parsed.profiles ?? {},
+      ...(parsed.lastGood ? { lastGood: parsed.lastGood } : {}),
+      ...(parsed.usageStats ? { usageStats: parsed.usageStats } : {}),
+      ...(parsed.order ? { order: parsed.order } : {}),
+    };
   } catch {
-    return [];
+    return { version: 1, profiles: {} };
   }
+}
+
+function writeAuthStore(store: AuthStoreV1): void {
+  const p = authProfilesPath();
+  const dir = join(p, "..");
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  writeFileSync(p, JSON.stringify(store, null, 2), "utf-8");
+}
+
+function loadAuthProfiles(): AuthProfile[] {
+  const store = readAuthStore();
+  const result: AuthProfile[] = [];
+  for (const [compositeKey, entry] of Object.entries(store.profiles)) {
+    const [provider, profile] = compositeKey.split(":");
+    const key = entry?.key ?? (entry as unknown as { apiKey?: string })?.apiKey;
+    if (provider && profile && key) {
+      result.push({ provider, profile, apiKey: key });
+    }
+  }
+  return result;
 }
 
 function maskApiKey(key: string): string {
@@ -500,44 +564,131 @@ function maskApiKey(key: string): string {
 }
 
 function saveAuthProfile(provider: string, profile: string, apiKey: string): void {
-  const p = authProfilesPath();
-  let raw: Record<string, { apiKey: string }> = {};
-  if (existsSync(p)) {
+  const store = readAuthStore();
+  const compositeKey = `${provider}:${profile}`;
+  store.profiles[compositeKey] = {
+    provider,
+    key: apiKey,
+    type: "api_key",
+  };
+  // Set lastGood
+  if (!store.lastGood) {
+    store.lastGood = {};
+  }
+  store.lastGood[provider] = compositeKey;
+  // Clear any cooldown / error stats for this profile
+  if (store.usageStats && compositeKey in store.usageStats) {
+    delete store.usageStats[compositeKey];
+  }
+  writeAuthStore(store);
+  console.log(`[nkd] ✓ Saved API key for ${compositeKey} (gateway-native format)`);
+}
+
+function deleteAuthProfile(provider: string, profile: string): boolean {
+  const store = readAuthStore();
+  const compositeKey = `${provider}:${profile}`;
+  if (!(compositeKey in store.profiles)) {
+    return false;
+  }
+  delete store.profiles[compositeKey];
+  // Clean up lastGood
+  if (store.lastGood?.[provider] === compositeKey) {
+    delete store.lastGood[provider];
+  }
+  // Clean up usageStats
+  if (store.usageStats && compositeKey in store.usageStats) {
+    delete store.usageStats[compositeKey];
+  }
+  writeAuthStore(store);
+  console.log(`[nkd] ✓ Deleted API key for ${compositeKey}`);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Auto-switch model config based on available API keys
+// ---------------------------------------------------------------------------
+// If OpenAI key exists → primary = openai/gpt-4.1-mini
+// If no OpenAI key   → primary = nvidia/meta/llama-3.3-70b-instruct (free)
+// Providers: Groq + NVIDIA (free), OpenAI (if key present)
+// ---------------------------------------------------------------------------
+
+const OPENAI_MODEL = "openai/gpt-4.1-mini";
+const FREE_PRIMARY = "nvidia/meta/llama-3.3-70b-instruct";
+const FREE_FALLBACKS = [
+  "groq/llama-3.3-70b-versatile",
+  "groq/llama-3.1-8b-instant",
+  "nvidia/nvidia/llama-3.1-nemotron-70b-instruct",
+];
+
+function hasOpenAIKey(): boolean {
+  const store = readAuthStore();
+  return Object.entries(store.profiles).some(
+    ([, entry]) => entry?.provider === "openai" && entry?.key && entry.key.length > 0,
+  );
+}
+
+function syncModelConfig(): { primary: string; changed: boolean } {
+  const cfgPath = openclawConfigPath();
+  let cfg: Record<string, unknown> = {};
+  if (existsSync(cfgPath)) {
     try {
-      raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey: string }>;
+      cfg = JSON.parse(readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
     } catch {
       /* start fresh */
     }
   }
-  const key = `${provider}:${profile}`;
-  raw[key] = { apiKey };
-  // Ensure parent dir exists
-  const dir = join(p, "..");
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  writeFileSync(p, JSON.stringify(raw, null, 2), "utf-8");
-  console.log(`[nkd] ✓ Saved API key for ${key}`);
-}
 
-function deleteAuthProfile(provider: string, profile: string): boolean {
-  const p = authProfilesPath();
-  if (!existsSync(p)) {
-    return false;
+  const hasOAI = hasOpenAIKey();
+  const wantPrimary = hasOAI ? OPENAI_MODEL : FREE_PRIMARY;
+  const wantFallbacks = hasOAI ? [FREE_PRIMARY, ...FREE_FALLBACKS] : FREE_FALLBACKS;
+
+  // Navigate agents.defaults.model
+  const agents = (cfg.agents ?? {}) as Record<string, unknown>;
+  const defaults = (agents.defaults ?? {}) as Record<string, unknown>;
+  const model = (defaults.model ?? {}) as Record<string, unknown>;
+
+  const currentPrimary = model.primary as string | undefined;
+  if (currentPrimary === wantPrimary) {
+    return { primary: wantPrimary, changed: false };
   }
-  try {
-    const raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey: string }>;
-    const key = `${provider}:${profile}`;
-    if (!(key in raw)) {
-      return false;
+
+  // Update model
+  model.primary = wantPrimary;
+  model.fallbacks = wantFallbacks;
+  defaults.model = model;
+  agents.defaults = defaults;
+  cfg.agents = agents;
+
+  // Ensure openai is in plugins.allow if we're using it
+  const plugins = (cfg.plugins ?? {}) as Record<string, unknown>;
+  const allow = (plugins.allow ?? []) as string[];
+  const entries = (plugins.entries ?? {}) as Record<string, unknown>;
+  if (hasOAI) {
+    if (!allow.includes("openai")) {
+      allow.push("openai");
     }
-    delete raw[key];
-    writeFileSync(p, JSON.stringify(raw, null, 2), "utf-8");
-    console.log(`[nkd] ✓ Deleted API key for ${key}`);
-    return true;
-  } catch {
-    return false;
+    if (!entries.openai) {
+      entries.openai = { enabled: true, config: {} };
+    }
   }
+  plugins.allow = allow;
+  plugins.entries = entries;
+  cfg.plugins = plugins;
+
+  writeFileSync(cfgPath, JSON.stringify(cfg, null, 2), "utf-8");
+
+  // Also clear cooldowns so free models can be used immediately
+  if (!hasOAI) {
+    const store = readAuthStore();
+    store.usageStats = {};
+    writeAuthStore(store);
+    console.log("[nkd] ✓ Cleared usageStats/cooldowns for free model fallback");
+  }
+
+  console.log(
+    `[nkd] ✓ Model auto-switched → ${wantPrimary} (OpenAI key ${hasOAI ? "present" : "absent"})`,
+  );
+  return { primary: wantPrimary, changed: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -1078,7 +1229,17 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         profile: p.profile,
         maskedKey: maskApiKey(p.apiKey),
       }));
-      respond(true, { profiles: masked, path: authProfilesPath() }, undefined);
+      const oaiPresent = hasOpenAIKey();
+      respond(
+        true,
+        {
+          profiles: masked,
+          path: authProfilesPath(),
+          activeModel: oaiPresent ? OPENAI_MODEL : FREE_PRIMARY,
+          openaiConfigured: oaiPresent,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -1101,11 +1262,27 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         return;
       }
       saveAuthProfile(provider, profile || "default", apiKey);
+
+      // Auto-switch model if OpenAI key was added/changed
+      const modelSync = syncModelConfig();
+      const needsRestart = modelSync.changed;
+      if (needsRestart) {
+        // Schedule gateway restart to pick up new config
+        try {
+          scheduleGatewaySigusr1Restart("nkd-apikey-set-model-switch");
+        } catch {
+          /* best-effort restart */
+        }
+      }
+
       respond(
         true,
         {
           success: true,
           message: `Đã cập nhật API key cho ${provider}:${profile || "default"}`,
+          modelSwitched: modelSync.changed,
+          activeModel: modelSync.primary,
+          needsRestart,
         },
         undefined,
       );
@@ -1137,11 +1314,26 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         );
         return;
       }
+
+      // Auto-switch model if OpenAI key was removed
+      const modelSync = syncModelConfig();
+      const needsRestart = modelSync.changed;
+      if (needsRestart) {
+        try {
+          scheduleGatewaySigusr1Restart("nkd-apikey-delete-model-switch");
+        } catch {
+          /* best-effort restart */
+        }
+      }
+
       respond(
         true,
         {
           success: true,
           message: `Đã xóa API key cho ${provider}:${profile || "default"}`,
+          modelSwitched: modelSync.changed,
+          activeModel: modelSync.primary,
+          needsRestart,
         },
         undefined,
       );

@@ -867,7 +867,9 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
           <h2>🧹 Quản lý Sessions</h2>
           <p style="color:#94a3b8; font-size:13px; margin-bottom:16px;">
             Mỗi cuộc hội thoại Zalo/WhatsApp tạo 1 session. Session quá lớn sẽ vượt token limit của
-            AI model, gây lỗi không trả lời được. <strong style="color:#f59e0b;">Session vượt 50 KB sẽ bị tự động xóa</strong> khi refresh.
+            AI model, gây lỗi không trả lời được.
+            <strong style="color:#f59e0b;">Session vượt 50 KB sẽ bị tự động xóa</strong> khi
+            refresh.
           </p>
           <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
             <button class="nkd-btn nkd-btn-primary nkd-btn-sm" @click=${() => nkdRefreshSessions()}>
@@ -878,16 +880,27 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
             </button>
           </div>
           <div id="nkd-session-list" style="margin-bottom:16px;">
-            <p style="color:#94a3b8; text-align:center; padding:20px;">Nhấn Refresh để tải danh sách sessions</p>
+            <p style="color:#94a3b8; text-align:center; padding:20px;">
+              Nhấn Refresh để tải danh sách sessions
+            </p>
           </div>
           <div
             style="padding:14px; background:#0f172a; border-radius:8px; border:1px solid #334155;"
           >
             <h3 style="font-size:14px; margin:0 0 8px 0; color:#e2e8f0;">💡 Mẹo</h3>
             <ul style="color:#94a3b8; font-size:13px; margin:0; padding-left:20px;">
-              <li style="margin-bottom:4px;">Session <strong style="color:#f59e0b;">&gt; 50 KB</strong> sẽ bị <strong style="color:#22c55e;">auto-clean</strong> khi bạn nhấn Refresh hoặc mở tab Sessions</li>
-              <li style="margin-bottom:4px;">Bot sẽ bắt đầu hội thoại mới, <strong style="color:#e2e8f0;">không mất dữ liệu KB</strong></li>
-              <li style="margin-bottom:4px;">Groq free tier giới hạn 12k TPM — session ~50 KB ≈ 15k tokens → vượt limit</li>
+              <li style="margin-bottom:4px;">
+                Session <strong style="color:#f59e0b;">&gt; 50 KB</strong> sẽ bị
+                <strong style="color:#22c55e;">auto-clean</strong> khi bạn nhấn Refresh hoặc mở tab
+                Sessions
+              </li>
+              <li style="margin-bottom:4px;">
+                Bot sẽ bắt đầu hội thoại mới,
+                <strong style="color:#e2e8f0;">không mất dữ liệu KB</strong>
+              </li>
+              <li style="margin-bottom:4px;">
+                Groq free tier giới hạn 12k TPM — session ~50 KB ≈ 15k tokens → vượt limit
+              </li>
               <li>Nếu bot không trả lời, hãy kiểm tra sessions ở đây trước</li>
             </ul>
           </div>
@@ -1560,16 +1573,32 @@ async function nkdRefreshApiKeys(): Promise<void> {
     const data = await rpc<{
       profiles: Array<{ provider: string; profile: string; maskedKey: string }>;
       path: string;
+      activeModel?: string;
+      openaiConfigured?: boolean;
     }>("nkd.apikey.list");
     const container = document.getElementById("nkd-apikey-list");
     if (!container) return;
+
+    // Active model banner
+    const modelBanner = data.activeModel
+      ? `<div style="background:${data.openaiConfigured ? "#065f46" : "#92400e"}; color:#fff; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">${data.openaiConfigured ? "🤖" : "🆓"}</span>
+          <div>
+            <div style="font-weight:600;">Model đang dùng: ${data.activeModel}</div>
+            <div style="opacity:0.8; font-size:11px; margin-top:2px;">${data.openaiConfigured ? "✅ OpenAI key đã cấu hình — dùng GPT-4.1-mini (trả phí, nhanh, chất lượng cao)" : "⚡ Chưa có OpenAI key — dùng model miễn phí (Groq/OpenRouter). Thêm OpenAI key để tự động chuyển sang GPT-4.1-mini."}</div>
+          </div>
+        </div>`
+      : "";
+
     if (!data.profiles || data.profiles.length === 0) {
       container.innerHTML =
-        '<p style="color:var(--color-muted); text-align:center; padding:20px;">Chưa có API key nào. Thêm key bên dưới 👇</p>';
+        modelBanner +
+        '<p style="color:#94a3b8; text-align:center; padding:20px;">Chưa có API key nào. Thêm key bên dưới 👇</p>';
       return;
     }
     container.innerHTML =
-      `<div style="color:var(--color-muted); font-size:11px; margin-bottom:8px;">📂 File: <code style="background:var(--color-bg); padding:2px 6px; border-radius:4px;">${data.path}</code></div>` +
+      modelBanner +
+      `<div style="color:#94a3b8; font-size:11px; margin-bottom:8px;">📂 File: <code style="background:#1e293b; padding:2px 6px; border-radius:4px;">${data.path}</code></div>` +
       data.profiles
         .map((p) => {
           const icon = PROVIDER_ICONS[p.provider] || "🔹";
@@ -1577,7 +1606,7 @@ async function nkdRefreshApiKeys(): Promise<void> {
           <span style="font-size:20px;">${icon}</span>
           <span class="nkd-doc-title" style="min-width:100px;">${p.provider}</span>
           <span class="nkd-doc-meta" style="min-width:60px;">:${p.profile}</span>
-          <code style="flex:1; font-size:13px; color:var(--color-muted); background:var(--color-bg); padding:4px 8px; border-radius:4px; font-family:monospace;">${p.maskedKey}</code>
+          <code style="flex:1; font-size:13px; color:#94a3b8; background:#1e293b; padding:4px 8px; border-radius:4px; font-family:monospace;">${p.maskedKey}</code>
           <button class="nkd-btn nkd-btn-danger nkd-btn-sm nkd-ak-del-btn" style="padding:2px 8px; font-size:12px;" data-ak-provider="${p.provider}" data-ak-profile="${p.profile}">🗑️</button>
         </div>`;
         })
@@ -1625,8 +1654,21 @@ async function nkdSaveApiKey(): Promise<void> {
   }
 
   try {
-    await rpc("nkd.apikey.set", { provider, profile, apiKey });
-    nkdToast(`✅ Đã lưu API key cho ${provider}:${profile}`);
+    const result = await rpc<{
+      success: boolean;
+      message: string;
+      modelSwitched?: boolean;
+      activeModel?: string;
+      needsRestart?: boolean;
+    }>("nkd.apikey.set", { provider, profile, apiKey });
+    let toastMsg = `✅ Đã lưu API key cho ${provider}:${profile}`;
+    if (result.modelSwitched) {
+      toastMsg += `\n🔄 Model tự động chuyển → ${result.activeModel}`;
+    }
+    if (result.needsRestart) {
+      toastMsg += "\n⏳ Gateway đang restart...";
+    }
+    nkdToast(toastMsg);
     keyInput.value = "";
     nkdRefreshApiKeys();
   } catch (err: unknown) {
@@ -1638,13 +1680,27 @@ async function nkdSaveApiKey(): Promise<void> {
 async function nkdDeleteApiKey(provider: string, profile: string): Promise<void> {
   if (
     !confirm(
-      `⚠️ Xóa API key cho ${provider}:${profile}?\n\nBạn sẽ cần thêm lại key sau nếu muốn dùng provider này.`,
+      `⚠️ Xóa API key cho ${provider}:${profile}?\n\nBạn sẽ cần thêm lại key sau nếu muốn dùng provider này.${provider === "openai" ? "\n\n⚠️ Xóa OpenAI key sẽ tự động chuyển về model miễn phí!" : ""}`,
     )
-  )
+  ) {
     return;
+  }
   try {
-    await rpc("nkd.apikey.delete", { provider, profile });
-    nkdToast(`🗑️ Đã xóa API key: ${provider}:${profile}`);
+    const result = await rpc<{
+      success: boolean;
+      message: string;
+      modelSwitched?: boolean;
+      activeModel?: string;
+      needsRestart?: boolean;
+    }>("nkd.apikey.delete", { provider, profile });
+    let toastMsg = `🗑️ Đã xóa API key: ${provider}:${profile}`;
+    if (result.modelSwitched) {
+      toastMsg += `\n🔄 Model tự động chuyển → ${result.activeModel}`;
+    }
+    if (result.needsRestart) {
+      toastMsg += "\n⏳ Gateway đang restart...";
+    }
+    nkdToast(toastMsg);
     nkdRefreshApiKeys();
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Lỗi xóa";
@@ -1702,9 +1758,7 @@ async function nkdRefreshSessions(): Promise<void> {
 
     // Show auto-purge notification if any sessions were cleaned
     if (autoPurged.length > 0) {
-      nkdToast(
-        `🧹 Auto-cleaned ${autoPurged.length} session(s) vượt ${thresholdKB} KB limit`,
-      );
+      nkdToast(`🧹 Auto-cleaned ${autoPurged.length} session(s) vượt ${thresholdKB} KB limit`);
     }
 
     if (sessions.length === 0 && autoPurged.length === 0) {
@@ -1733,13 +1787,12 @@ async function nkdRefreshSessions(): Promise<void> {
       const sizeKB = s.sizeKB ?? (s.sizeBytes ? (s.sizeBytes / 1024).toFixed(1) : "0");
       const sizeBytes = s.sizeBytes ?? (s.sizeKB ? s.sizeKB * 1024 : 0);
       const isLarge = sizeBytes > thresholdKB * 1024;
-      const sizeStyle = isLarge
-        ? "color:#f87171; font-weight:bold;"
-        : "color:#e2e8f0;";
+      const sizeStyle = isLarge ? "color:#f87171; font-weight:bold;" : "color:#e2e8f0;";
       const shortId = s.id.length > 12 ? s.id.slice(0, 12) + "…" : s.id;
-      const modified = (s.modifiedAt || s.lastModified)
-        ? new Date(s.modifiedAt || s.lastModified).toLocaleString("vi-VN")
-        : "—";
+      const modified =
+        s.modifiedAt || s.lastModified
+          ? new Date(s.modifiedAt || s.lastModified).toLocaleString("vi-VN")
+          : "—";
       const lines = s.lines ?? 0;
 
       html += `<tr style="border-bottom:1px solid #1e293b;">
