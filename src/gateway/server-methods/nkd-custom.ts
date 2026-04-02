@@ -6,7 +6,15 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  unlinkSync,
+  statSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { scheduleGatewaySigusr1Restart } from "../../infra/restart.js";
@@ -321,6 +329,85 @@ function loadTicketStats(): {
   } catch {
     return { total: 0, open: 0, closed: 0, byChannel: {} };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Session management helpers
+// ---------------------------------------------------------------------------
+
+function sessionsDir(): string {
+  return join(homedir(), ".openclaw", "agents", "main", "sessions");
+}
+
+type SessionInfo = {
+  id: string;
+  sizeKB: number;
+  lines: number;
+  lastModified: string;
+  ageMinutes: number;
+};
+
+function listSessions(): SessionInfo[] {
+  const dir = sessionsDir();
+  if (!existsSync(dir)) {
+    return [];
+  }
+  const files = readdirSync(dir).filter((f) => f.endsWith(".jsonl"));
+  const now = Date.now();
+  return files.map((f) => {
+    const fullPath = join(dir, f);
+    const stat = statSync(fullPath);
+    const content = readFileSync(fullPath, "utf-8");
+    const lines = content.split("\n").filter((l) => l.trim()).length;
+    return {
+      id: f.replace(".jsonl", ""),
+      sizeKB: Math.round((stat.size / 1024) * 10) / 10,
+      lines,
+      lastModified: stat.mtime.toISOString(),
+      ageMinutes: Math.round((now - stat.mtime.getTime()) / 60000),
+    };
+  });
+}
+
+function clearAllSessions(): { deletedCount: number; freedKB: number } {
+  const dir = sessionsDir();
+  if (!existsSync(dir)) {
+    return { deletedCount: 0, freedKB: 0 };
+  }
+  const files = readdirSync(dir).filter((f) => f.endsWith(".jsonl") || f.endsWith(".lock"));
+  let freedBytes = 0;
+  let count = 0;
+  for (const f of files) {
+    const fullPath = join(dir, f);
+    try {
+      const stat = statSync(fullPath);
+      freedBytes += stat.size;
+      unlinkSync(fullPath);
+      count++;
+    } catch {
+      /* ignore locked files */
+    }
+  }
+  console.log(`[nkd] ✓ Cleared ${count} session files (${Math.round(freedBytes / 1024)} KB freed)`);
+  return { deletedCount: count, freedKB: Math.round(freedBytes / 1024) };
+}
+
+function clearSession(sessionId: string): boolean {
+  const dir = sessionsDir();
+  const filePath = join(dir, `${sessionId}.jsonl`);
+  const lockPath = join(dir, `${sessionId}.jsonl.lock`);
+  let deleted = false;
+  if (existsSync(filePath)) {
+    unlinkSync(filePath);
+    deleted = true;
+  }
+  if (existsSync(lockPath)) {
+    unlinkSync(lockPath);
+  }
+  if (deleted) {
+    console.log(`[nkd] ✓ Cleared session: ${sessionId}`);
+  }
+  return deleted;
 }
 
 // ---------------------------------------------------------------------------
@@ -1011,6 +1098,61 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
           success: true,
           message: `Đã xóa API key cho ${provider}:${profile || "default"}`,
         },
+        undefined,
+      );
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Session List ---
+  "nkd.session.list": async ({ respond }) => {
+    try {
+      const sessions = listSessions();
+      respond(true, { sessions, sessionsDir: sessionsDir() }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Session Clear All (reset all conversations) ---
+  "nkd.session.clearAll": async ({ respond }) => {
+    try {
+      const result = clearAllSessions();
+      respond(
+        true,
+        {
+          success: true,
+          message: `Đã xóa ${result.deletedCount} session files (giải phóng ${result.freedKB} KB). Restart Gateway để áp dụng.`,
+          ...result,
+        },
+        undefined,
+      );
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Session Clear One ---
+  "nkd.session.clear": async ({ params, respond }) => {
+    try {
+      const sessionId = String((params as { id?: string }).id ?? "");
+      if (!sessionId) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "id is required"));
+        return;
+      }
+      const deleted = clearSession(sessionId);
+      if (!deleted) {
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, `Session ${sessionId} không tồn tại`),
+        );
+        return;
+      }
+      respond(
+        true,
+        { success: true, message: `Đã xóa session ${sessionId}` },
         undefined,
       );
     } catch (err) {

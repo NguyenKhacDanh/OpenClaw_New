@@ -1,0 +1,18 @@
+│
+◇  Config warnings ───────────────────────────────────────────────────╮
+│                                                                     │
+│  - plugins.entries.zalouser: plugin zalouser: duplicate plugin id   │
+│    detected; global plugin will be overridden by bundled plugin     │
+│    (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)  │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────╯
+[90m2026-04-02T14:16:33.350+07:00[39m [36m[gateway][39m [36mforce: no listeners on port 19001[39m
+[90m2026-04-02T14:17:00.496+07:00[39m [36m[gateway][39m [36m[plugins] duplicate plugin id detected; global plugin will be overridden by bundled plugin (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts) (plugin=zalouser, source=C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)[39m
+[90m2026-04-02T14:17:00.514+07:00[39m [35m[canvas][39m [36mhost mounted at http://0.0.0.0:19001/__openclaw__/canvas/ (root C:\Users\Administrator\.openclaw\canvas)[39m
+[90m2026-04-02T14:17:00.612+07:00[39m [36m[heartbeat][39m [36mstarted[39m
+[90m2026-04-02T14:17:00.615+07:00[39m [32m[health-monitor][39m [36mstarted (interval: 300s, startup-grace: 60s, channel-connect-grace: 120s)[39m
+[90m2026-04-02T14:17:00.641+07:00[39m [36m[gateway][39m [36magent model: groq/llama-3.3-70b-versatile[39m
+[90m2026-04-02T14:17:00.645+07:00[39m [36m[gateway][39m [36mlistening on ws://0.0.0.0:19001 (PID 24436)[39m
+[90m2026-04-02T14:17:00.649+07:00[39m [36m[gateway][39m [36mlog file: \tmp\openclaw\openclaw-2026-04-02.log[39m
+[90m2026-04-02T14:17:08.237+07:00[39m [31m[zalouser][39m [36m[default] starting zalouser provider (Agent Cu Đen)[39m
+[90m2026-04-02T14:17:15.416+07:00[39m [36m[ws][39m [36mwebchat connected conn=145cfcbf-e997-479d-ae69-ec2dbb8a534e remote=127.0.0.1 client=openclaw-control-ui webchat v2026.3.27[39m

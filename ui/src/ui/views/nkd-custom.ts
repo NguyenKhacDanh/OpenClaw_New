@@ -319,6 +319,13 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
         >
           🔑 API Keys
         </button>
+        <button
+          class="nkd-tab-btn"
+          id="nkd-subtab-sessions"
+          @click=${() => nkdSwitchSubtab("sessions")}
+        >
+          🧹 Sessions
+        </button>
       </div>
 
       <!-- KB -->
@@ -853,6 +860,32 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
           </div>
         </div>
       </div>
+
+      <!-- Sessions Management -->
+      <div id="nkd-panel-sessions" style="display:none;">
+        <div class="nkd-section">
+          <h2>🧹 Quản lý Sessions</h2>
+          <p style="color:var(--color-muted); font-size:13px; margin-bottom:16px;">
+            Mỗi cuộc hội thoại Zalo/WhatsApp tạo 1 session. Session quá lớn sẽ vượt token limit của AI model, gây lỗi không trả lời được.
+            Xóa session sẽ reset cuộc hội thoại — bot sẽ bắt đầu conversation mới.
+          </p>
+          <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+            <button class="nkd-btn nkd-btn-primary nkd-btn-sm" @click=${() => nkdRefreshSessions()}>🔄 Refresh</button>
+            <button class="nkd-btn nkd-btn-danger nkd-btn-sm" @click=${() => nkdClearAllSessions()}>🗑️ Xóa TẤT CẢ Sessions</button>
+          </div>
+          <div id="nkd-session-list" style="margin-bottom:16px;">
+            <p style="color:var(--color-muted); text-align:center; padding:20px;">Đang tải...</p>
+          </div>
+          <div style="padding:12px; background:var(--color-bg); border-radius:8px; border:1px solid var(--color-border);">
+            <h3 style="font-size:14px; margin:0 0 8px 0;">💡 Mẹo</h3>
+            <ul style="color:var(--color-muted); font-size:13px; margin:0; padding-left:20px;">
+              <li>Session > 50 KB thường vượt token limit (12k TPM) của Groq free tier</li>
+              <li>Xóa session rồi <strong>Restart Gateway</strong> để áp dụng ngay</li>
+              <li>Bot sẽ bắt đầu hội thoại mới, không mất dữ liệu KB</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -862,7 +895,7 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
 // ---------------------------------------------------------------------------
 
 function nkdSwitchSubtab(tab: string): void {
-  for (const p of ["kb", "agent", "channels", "tickets", "apikeys"]) {
+  for (const p of ["kb", "agent", "channels", "tickets", "apikeys", "sessions"]) {
     const panel = document.getElementById(`nkd-panel-${p}`);
     const btn = document.getElementById(`nkd-subtab-${p}`);
     if (panel) panel.style.display = p === tab ? "block" : "none";
@@ -875,6 +908,7 @@ function nkdSwitchSubtab(tab: string): void {
   if (tab === "agent") nkdLoadProfile();
   if (tab === "tickets") nkdLoadTicketStats();
   if (tab === "apikeys") nkdRefreshApiKeys();
+  if (tab === "sessions") nkdRefreshSessions();
 }
 
 function nkdToast(msg: string, isError = false): void {
@@ -1628,6 +1662,101 @@ document.addEventListener("change", (e: Event) => {
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// Session management functions
+// ---------------------------------------------------------------------------
+
+interface SessionInfo {
+  id: string;
+  sizeBytes: number;
+  modifiedAt: string;
+  messageCount?: number;
+}
+
+async function nkdRefreshSessions(): Promise<void> {
+  const container = document.getElementById("nkd-session-list");
+  if (!container) {
+    return;
+  }
+  container.innerHTML = `<p style="color:var(--color-muted); text-align:center; padding:20px;">⏳ Đang tải sessions...</p>`;
+  try {
+    const result = (await rpc("nkd.session.list", {})) as { sessions: SessionInfo[] };
+    const sessions = result.sessions ?? [];
+    if (sessions.length === 0) {
+      container.innerHTML = `<p style="color:var(--color-muted); text-align:center; padding:20px;">✅ Không có session nào. Bot sẽ tạo session mới khi có tin nhắn.</p>`;
+      return;
+    }
+    let html = `<table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--color-border);">
+          <th style="text-align:left; padding:8px;">Session ID</th>
+          <th style="text-align:right; padding:8px;">Kích thước</th>
+          <th style="text-align:right; padding:8px;">Cập nhật</th>
+          <th style="text-align:center; padding:8px;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    for (const s of sessions) {
+      const sizeKB = (s.sizeBytes / 1024).toFixed(1);
+      const isLarge = s.sizeBytes > 50 * 1024;
+      const sizeColor = isLarge ? "color:#e53e3e; font-weight:bold;" : "";
+      const shortId = s.id.length > 12 ? s.id.slice(0, 12) + "…" : s.id;
+      const modified = s.modifiedAt ? new Date(s.modifiedAt).toLocaleString("vi-VN") : "—";
+      html += `<tr style="border-bottom:1px solid var(--color-border);">
+        <td style="padding:8px; font-family:monospace;" title="${s.id}">${shortId}</td>
+        <td style="text-align:right; padding:8px; ${sizeColor}">${sizeKB} KB${isLarge ? " ⚠️" : ""}</td>
+        <td style="text-align:right; padding:8px;">${modified}</td>
+        <td style="text-align:center; padding:8px;">
+          <button class="nkd-btn nkd-btn-danger nkd-btn-sm" style="padding:2px 10px; font-size:12px;"
+            onclick="window.nkdClearSession('${s.id}')">🗑️ Xóa</button>
+        </td>
+      </tr>`;
+    }
+    html += `</tbody></table>
+      <p style="color:var(--color-muted); font-size:12px; margin-top:8px;">
+        Tổng: <strong>${sessions.length}</strong> session(s) · 
+        Tổng kích thước: <strong>${(sessions.reduce((acc: number, s: SessionInfo) => acc + s.sizeBytes, 0) / 1024).toFixed(1)} KB</strong>
+      </p>`;
+    container.innerHTML = html;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Lỗi tải sessions";
+    container.innerHTML = `<p style="color:#e53e3e; text-align:center; padding:20px;">❌ ${msg}</p>`;
+  }
+}
+
+async function nkdClearAllSessions(): Promise<void> {
+  if (!confirm("⚠️ XÓA TẤT CẢ SESSIONS?\n\nBot sẽ bắt đầu hội thoại mới với tất cả người dùng.\nDữ liệu KB không bị ảnh hưởng.")) {
+    return;
+  }
+  try {
+    const result = (await rpc("nkd.session.clearAll", {})) as { deleted: number };
+    nkdToast(`✅ Đã xóa ${result.deleted ?? 0} sessions`);
+    nkdRefreshSessions();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Lỗi xóa sessions";
+    nkdToast(`❌ ${msg}`, true);
+  }
+}
+
+async function nkdClearSession(sessionId: string): Promise<void> {
+  if (!confirm(`Xóa session ${sessionId}?\nHội thoại này sẽ được reset.`)) {
+    return;
+  }
+  try {
+    await rpc("nkd.session.clear", { sessionId });
+    nkdToast(`✅ Đã xóa session ${sessionId.slice(0, 12)}`);
+    nkdRefreshSessions();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Lỗi xóa session";
+    nkdToast(`❌ ${msg}`, true);
+  }
+}
+
+// Expose to inline onclick handlers
+(window as Record<string, unknown>).nkdClearSession = nkdClearSession;
+(window as Record<string, unknown>).nkdClearAllSessions = nkdClearAllSessions;
+(window as Record<string, unknown>).nkdRefreshSessions = nkdRefreshSessions;
 
 // ---------------------------------------------------------------------------
 // Auto-init
