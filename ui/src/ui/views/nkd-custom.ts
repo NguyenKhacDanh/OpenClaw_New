@@ -865,23 +865,30 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
       <div id="nkd-panel-sessions" style="display:none;">
         <div class="nkd-section">
           <h2>🧹 Quản lý Sessions</h2>
-          <p style="color:var(--color-muted); font-size:13px; margin-bottom:16px;">
-            Mỗi cuộc hội thoại Zalo/WhatsApp tạo 1 session. Session quá lớn sẽ vượt token limit của AI model, gây lỗi không trả lời được.
-            Xóa session sẽ reset cuộc hội thoại — bot sẽ bắt đầu conversation mới.
+          <p style="color:#94a3b8; font-size:13px; margin-bottom:16px;">
+            Mỗi cuộc hội thoại Zalo/WhatsApp tạo 1 session. Session quá lớn sẽ vượt token limit của
+            AI model, gây lỗi không trả lời được. <strong style="color:#f59e0b;">Session vượt 50 KB sẽ bị tự động xóa</strong> khi refresh.
           </p>
           <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
-            <button class="nkd-btn nkd-btn-primary nkd-btn-sm" @click=${() => nkdRefreshSessions()}>🔄 Refresh</button>
-            <button class="nkd-btn nkd-btn-danger nkd-btn-sm" @click=${() => nkdClearAllSessions()}>🗑️ Xóa TẤT CẢ Sessions</button>
+            <button class="nkd-btn nkd-btn-primary nkd-btn-sm" @click=${() => nkdRefreshSessions()}>
+              🔄 Refresh
+            </button>
+            <button class="nkd-btn nkd-btn-danger nkd-btn-sm" @click=${() => nkdClearAllSessions()}>
+              🗑️ Xóa TẤT CẢ Sessions
+            </button>
           </div>
           <div id="nkd-session-list" style="margin-bottom:16px;">
-            <p style="color:var(--color-muted); text-align:center; padding:20px;">Đang tải...</p>
+            <p style="color:#94a3b8; text-align:center; padding:20px;">Nhấn Refresh để tải danh sách sessions</p>
           </div>
-          <div style="padding:12px; background:var(--color-bg); border-radius:8px; border:1px solid var(--color-border);">
-            <h3 style="font-size:14px; margin:0 0 8px 0;">💡 Mẹo</h3>
-            <ul style="color:var(--color-muted); font-size:13px; margin:0; padding-left:20px;">
-              <li>Session > 50 KB thường vượt token limit (12k TPM) của Groq free tier</li>
-              <li>Xóa session rồi <strong>Restart Gateway</strong> để áp dụng ngay</li>
-              <li>Bot sẽ bắt đầu hội thoại mới, không mất dữ liệu KB</li>
+          <div
+            style="padding:14px; background:#0f172a; border-radius:8px; border:1px solid #334155;"
+          >
+            <h3 style="font-size:14px; margin:0 0 8px 0; color:#e2e8f0;">💡 Mẹo</h3>
+            <ul style="color:#94a3b8; font-size:13px; margin:0; padding-left:20px;">
+              <li style="margin-bottom:4px;">Session <strong style="color:#f59e0b;">&gt; 50 KB</strong> sẽ bị <strong style="color:#22c55e;">auto-clean</strong> khi bạn nhấn Refresh hoặc mở tab Sessions</li>
+              <li style="margin-bottom:4px;">Bot sẽ bắt đầu hội thoại mới, <strong style="color:#e2e8f0;">không mất dữ liệu KB</strong></li>
+              <li style="margin-bottom:4px;">Groq free tier giới hạn 12k TPM — session ~50 KB ≈ 15k tokens → vượt limit</li>
+              <li>Nếu bot không trả lời, hãy kiểm tra sessions ở đây trước</li>
             </ul>
           </div>
         </div>
@@ -1670,8 +1677,11 @@ document.addEventListener("change", (e: Event) => {
 interface SessionInfo {
   id: string;
   sizeBytes: number;
+  sizeKB: number;
+  lines: number;
   modifiedAt: string;
-  messageCount?: number;
+  lastModified: string;
+  ageMinutes: number;
 }
 
 async function nkdRefreshSessions(): Promise<void> {
@@ -1679,54 +1689,103 @@ async function nkdRefreshSessions(): Promise<void> {
   if (!container) {
     return;
   }
-  container.innerHTML = `<p style="color:var(--color-muted); text-align:center; padding:20px;">⏳ Đang tải sessions...</p>`;
+  container.innerHTML = `<p style="color:#94a3b8; text-align:center; padding:20px;">⏳ Đang tải sessions...</p>`;
   try {
-    const result = (await rpc("nkd.session.list", {})) as { sessions: SessionInfo[] };
+    const result = (await rpc("nkd.session.list", {})) as {
+      sessions: SessionInfo[];
+      autoPurged?: string[];
+      autoCleanThresholdKB?: number;
+    };
     const sessions = result.sessions ?? [];
-    if (sessions.length === 0) {
-      container.innerHTML = `<p style="color:var(--color-muted); text-align:center; padding:20px;">✅ Không có session nào. Bot sẽ tạo session mới khi có tin nhắn.</p>`;
+    const autoPurged = result.autoPurged ?? [];
+    const thresholdKB = result.autoCleanThresholdKB ?? 50;
+
+    // Show auto-purge notification if any sessions were cleaned
+    if (autoPurged.length > 0) {
+      nkdToast(
+        `🧹 Auto-cleaned ${autoPurged.length} session(s) vượt ${thresholdKB} KB limit`,
+      );
+    }
+
+    if (sessions.length === 0 && autoPurged.length === 0) {
+      container.innerHTML = `<p style="color:#94a3b8; text-align:center; padding:20px;">✅ Không có session nào. Bot sẽ tạo session mới khi có tin nhắn.</p>`;
       return;
     }
-    let html = `<table style="width:100%; border-collapse:collapse; font-size:13px;">
+
+    if (sessions.length === 0 && autoPurged.length > 0) {
+      container.innerHTML = `<p style="color:#22c55e; text-align:center; padding:20px;">🧹 Đã auto-clean ${autoPurged.length} session quá lớn. Tất cả sessions đã được xóa.</p>`;
+      return;
+    }
+
+    let html = `<table style="width:100%; border-collapse:collapse; font-size:13px; color:#e2e8f0;">
       <thead>
-        <tr style="border-bottom:2px solid var(--color-border);">
-          <th style="text-align:left; padding:8px;">Session ID</th>
-          <th style="text-align:right; padding:8px;">Kích thước</th>
-          <th style="text-align:right; padding:8px;">Cập nhật</th>
-          <th style="text-align:center; padding:8px;">Thao tác</th>
+        <tr style="border-bottom:2px solid #334155;">
+          <th style="text-align:left; padding:10px 8px; color:#94a3b8; font-weight:600;">Session ID</th>
+          <th style="text-align:right; padding:10px 8px; color:#94a3b8; font-weight:600;">Kích thước</th>
+          <th style="text-align:right; padding:10px 8px; color:#94a3b8; font-weight:600;">Dòng</th>
+          <th style="text-align:right; padding:10px 8px; color:#94a3b8; font-weight:600;">Cập nhật</th>
+          <th style="text-align:center; padding:10px 8px; color:#94a3b8; font-weight:600;">Thao tác</th>
         </tr>
       </thead>
       <tbody>`;
+
     for (const s of sessions) {
-      const sizeKB = (s.sizeBytes / 1024).toFixed(1);
-      const isLarge = s.sizeBytes > 50 * 1024;
-      const sizeColor = isLarge ? "color:#e53e3e; font-weight:bold;" : "";
+      const sizeKB = s.sizeKB ?? (s.sizeBytes ? (s.sizeBytes / 1024).toFixed(1) : "0");
+      const sizeBytes = s.sizeBytes ?? (s.sizeKB ? s.sizeKB * 1024 : 0);
+      const isLarge = sizeBytes > thresholdKB * 1024;
+      const sizeStyle = isLarge
+        ? "color:#f87171; font-weight:bold;"
+        : "color:#e2e8f0;";
       const shortId = s.id.length > 12 ? s.id.slice(0, 12) + "…" : s.id;
-      const modified = s.modifiedAt ? new Date(s.modifiedAt).toLocaleString("vi-VN") : "—";
-      html += `<tr style="border-bottom:1px solid var(--color-border);">
-        <td style="padding:8px; font-family:monospace;" title="${s.id}">${shortId}</td>
-        <td style="text-align:right; padding:8px; ${sizeColor}">${sizeKB} KB${isLarge ? " ⚠️" : ""}</td>
-        <td style="text-align:right; padding:8px;">${modified}</td>
-        <td style="text-align:center; padding:8px;">
-          <button class="nkd-btn nkd-btn-danger nkd-btn-sm" style="padding:2px 10px; font-size:12px;"
+      const modified = (s.modifiedAt || s.lastModified)
+        ? new Date(s.modifiedAt || s.lastModified).toLocaleString("vi-VN")
+        : "—";
+      const lines = s.lines ?? 0;
+
+      html += `<tr style="border-bottom:1px solid #1e293b;">
+        <td style="padding:10px 8px; font-family:monospace; color:#e2e8f0;" title="${s.id}">${shortId}</td>
+        <td style="text-align:right; padding:10px 8px; ${sizeStyle}">${sizeKB} KB${isLarge ? " ⚠️" : ""}</td>
+        <td style="text-align:right; padding:10px 8px; color:#94a3b8;">${lines}</td>
+        <td style="text-align:right; padding:10px 8px; color:#94a3b8;">${modified}</td>
+        <td style="text-align:center; padding:10px 8px;">
+          <button style="padding:4px 12px; font-size:12px; border-radius:6px; border:none; cursor:pointer; background:#ef4444; color:#fff; font-weight:600;"
             onclick="window.nkdClearSession('${s.id}')">🗑️ Xóa</button>
         </td>
       </tr>`;
     }
-    html += `</tbody></table>
-      <p style="color:var(--color-muted); font-size:12px; margin-top:8px;">
-        Tổng: <strong>${sessions.length}</strong> session(s) · 
-        Tổng kích thước: <strong>${(sessions.reduce((acc: number, s: SessionInfo) => acc + s.sizeBytes, 0) / 1024).toFixed(1)} KB</strong>
+
+    const totalBytes = sessions.reduce(
+      (acc: number, s: SessionInfo) => acc + (s.sizeBytes ?? (s.sizeKB ? s.sizeKB * 1024 : 0)),
+      0,
+    );
+
+    html += `</tbody></table>`;
+
+    // Auto-purge notification
+    if (autoPurged.length > 0) {
+      html += `<p style="color:#22c55e; font-size:12px; margin-top:8px; padding:8px; background:#064e3b; border-radius:6px;">
+        🧹 Vừa auto-clean <strong>${autoPurged.length}</strong> session(s) vượt ${thresholdKB} KB limit: ${autoPurged.map((id: string) => id.slice(0, 8)).join(", ")}
       </p>`;
+    }
+
+    html += `<p style="color:#94a3b8; font-size:12px; margin-top:8px;">
+      Tổng: <strong style="color:#e2e8f0;">${sessions.length}</strong> session(s) · 
+      Tổng kích thước: <strong style="color:#e2e8f0;">${(totalBytes / 1024).toFixed(1)} KB</strong> ·
+      Auto-clean threshold: <strong style="color:#f59e0b;">${thresholdKB} KB</strong>
+    </p>`;
     container.innerHTML = html;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Lỗi tải sessions";
-    container.innerHTML = `<p style="color:#e53e3e; text-align:center; padding:20px;">❌ ${msg}</p>`;
+    container.innerHTML = `<p style="color:#f87171; text-align:center; padding:20px;">❌ ${msg}</p>`;
   }
 }
 
 async function nkdClearAllSessions(): Promise<void> {
-  if (!confirm("⚠️ XÓA TẤT CẢ SESSIONS?\n\nBot sẽ bắt đầu hội thoại mới với tất cả người dùng.\nDữ liệu KB không bị ảnh hưởng.")) {
+  if (
+    !confirm(
+      "⚠️ XÓA TẤT CẢ SESSIONS?\n\nBot sẽ bắt đầu hội thoại mới với tất cả người dùng.\nDữ liệu KB không bị ảnh hưởng.",
+    )
+  ) {
     return;
   }
   try {

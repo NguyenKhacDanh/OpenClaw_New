@@ -335,14 +335,19 @@ function loadTicketStats(): {
 // Session management helpers
 // ---------------------------------------------------------------------------
 
+/** Max session file size before auto-cleanup kicks in (default 50 KB). */
+const SESSION_MAX_SIZE_BYTES = 50 * 1024;
+
 function sessionsDir(): string {
   return join(homedir(), ".openclaw", "agents", "main", "sessions");
 }
 
 type SessionInfo = {
   id: string;
+  sizeBytes: number;
   sizeKB: number;
   lines: number;
+  modifiedAt: string;
   lastModified: string;
   ageMinutes: number;
 };
@@ -361,12 +366,52 @@ function listSessions(): SessionInfo[] {
     const lines = content.split("\n").filter((l) => l.trim()).length;
     return {
       id: f.replace(".jsonl", ""),
+      sizeBytes: stat.size,
       sizeKB: Math.round((stat.size / 1024) * 10) / 10,
       lines,
+      modifiedAt: stat.mtime.toISOString(),
       lastModified: stat.mtime.toISOString(),
       ageMinutes: Math.round((now - stat.mtime.getTime()) / 60000),
     };
   });
+}
+
+/**
+ * Auto-clean sessions that exceed SESSION_MAX_SIZE_BYTES.
+ * Returns a list of session IDs that were auto-purged.
+ */
+function autoCleanOversizedSessions(): string[] {
+  const dir = sessionsDir();
+  if (!existsSync(dir)) {
+    return [];
+  }
+  const files = readdirSync(dir).filter((f) => f.endsWith(".jsonl"));
+  const purged: string[] = [];
+  for (const f of files) {
+    const fullPath = join(dir, f);
+    try {
+      const stat = statSync(fullPath);
+      if (stat.size > SESSION_MAX_SIZE_BYTES) {
+        const sessionId = f.replace(".jsonl", "");
+        unlinkSync(fullPath);
+        // Also remove lock file
+        const lockPath = fullPath + ".lock";
+        if (existsSync(lockPath)) {
+          unlinkSync(lockPath);
+        }
+        purged.push(sessionId);
+        console.log(
+          `[nkd] 🧹 Auto-cleared oversized session: ${sessionId} (${Math.round(stat.size / 1024)} KB > ${Math.round(SESSION_MAX_SIZE_BYTES / 1024)} KB limit)`,
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  if (purged.length > 0) {
+    console.log(`[nkd] ✓ Auto-cleaned ${purged.length} oversized session(s)`);
+  }
+  return purged;
 }
 
 function clearAllSessions(): { deletedCount: number; freedKB: number } {
@@ -1108,8 +1153,19 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
   // --- Session List ---
   "nkd.session.list": async ({ respond }) => {
     try {
+      // Auto-clean oversized sessions before listing
+      const autoPurged = autoCleanOversizedSessions();
       const sessions = listSessions();
-      respond(true, { sessions, sessionsDir: sessionsDir() }, undefined);
+      respond(
+        true,
+        {
+          sessions,
+          sessionsDir: sessionsDir(),
+          autoPurged,
+          autoCleanThresholdKB: Math.round(SESSION_MAX_SIZE_BYTES / 1024),
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -1136,9 +1192,14 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
   // --- Session Clear One ---
   "nkd.session.clear": async ({ params, respond }) => {
     try {
-      const sessionId = String((params as { id?: string }).id ?? "");
+      const p = params as { id?: string; sessionId?: string };
+      const sessionId = String(p.sessionId ?? p.id ?? "");
       if (!sessionId) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "id is required"));
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "sessionId or id is required"),
+        );
         return;
       }
       const deleted = clearSession(sessionId);
@@ -1150,11 +1211,7 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         );
         return;
       }
-      respond(
-        true,
-        { success: true, message: `Đã xóa session ${sessionId}` },
-        undefined,
-      );
+      respond(true, { success: true, message: `Đã xóa session ${sessionId}` }, undefined);
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
