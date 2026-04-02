@@ -398,8 +398,134 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
       return;
     }
 
+    // --- NKD Custom: API Keys ---
+    if (path === "/api/nkd/apikeys" && method === "GET") {
+      this.sendJson(res, 200, this.getApiKeys());
+      return;
+    }
+    if (path === "/api/nkd/apikeys" && method === "PUT") {
+      this.readBody(req).then((body) => {
+        const updates = JSON.parse(body);
+        this.updateApiKeys(updates);
+        this.sendJson(res, 200, { success: true, message: "API keys đã được cập nhật!" });
+      });
+      return;
+    }
+    if (path === "/api/nkd/models" && method === "GET") {
+      this.sendJson(res, 200, this.getModelsConfig());
+      return;
+    }
+    if (path === "/api/nkd/models" && method === "PUT") {
+      this.readBody(req).then((body) => {
+        const models = JSON.parse(body);
+        this.updateModelsConfig(models);
+        this.sendJson(res, 200, { success: true, message: "Models config đã được cập nhật!" });
+      });
+      return;
+    }
+    if (path === "/api/nkd/gateway-config" && method === "GET") {
+      this.sendJson(res, 200, this.getGatewayConfig());
+      return;
+    }
+
     // --- 404 ---
     this.sendJson(res, 404, { error: "Not found" });
+  }
+
+  // -------------------------------------------------------------------------
+  // NKD Custom: API Key Management
+  // -------------------------------------------------------------------------
+
+  private getModelsJsonPath(): string {
+    const home = process.env.USERPROFILE ?? process.env.HOME ?? "";
+    return join(home, ".openclaw", "models.json");
+  }
+
+  private getOpenclawConfigPath(): string {
+    const home = process.env.USERPROFILE ?? process.env.HOME ?? "";
+    return join(home, ".openclaw", "openclaw.json");
+  }
+
+  private getApiKeys(): { keys: Array<{ provider: string; key: string; maskedKey: string; modelIds: string[] }> } {
+    const modelsPath = this.getModelsJsonPath();
+    if (!existsSync(modelsPath)) {
+      return { keys: [] };
+    }
+    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{ id: string; apiKey: string }>;
+
+    // Group by unique API keys
+    const keyMap = new Map<string, { provider: string; key: string; modelIds: string[] }>();
+    for (const m of models) {
+      const provider = m.id.split("/")[0]; // groq, openrouter, etc.
+      if (!keyMap.has(m.apiKey)) {
+        keyMap.set(m.apiKey, { provider, key: m.apiKey, modelIds: [m.id] });
+      } else {
+        keyMap.get(m.apiKey)!.modelIds.push(m.id);
+      }
+    }
+
+    return {
+      keys: [...keyMap.values()].map((k) => ({
+        ...k,
+        maskedKey: k.key.slice(0, 10) + "..." + k.key.slice(-6),
+      })),
+    };
+  }
+
+  private updateApiKeys(updates: { oldKey: string; newKey: string }[]): void {
+    const modelsPath = this.getModelsJsonPath();
+    if (!existsSync(modelsPath)) return;
+
+    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{ id: string; apiKey: string }>;
+
+    for (const { oldKey, newKey } of updates) {
+      for (const m of models) {
+        if (m.apiKey === oldKey) {
+          m.apiKey = newKey;
+        }
+      }
+    }
+
+    writeFileSync(modelsPath, JSON.stringify(models, null, 2), "utf-8");
+
+    // Also update config-templates/models.json in repo
+    const repoModelsPath = join(this.config.dataDir, "..", "..", "config-templates", "models.json");
+    if (existsSync(repoModelsPath)) {
+      writeFileSync(repoModelsPath, JSON.stringify(models, null, 2), "utf-8");
+    }
+  }
+
+  private getModelsConfig(): { models: Array<{ id: string; apiKey: string; provider: string }> } {
+    const modelsPath = this.getModelsJsonPath();
+    if (!existsSync(modelsPath)) {
+      return { models: [] };
+    }
+    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{ id: string; apiKey: string }>;
+    return {
+      models: models.map((m) => ({
+        ...m,
+        provider: m.id.split("/")[0],
+      })),
+    };
+  }
+
+  private updateModelsConfig(models: Array<{ id: string; apiKey: string }>): void {
+    const modelsPath = this.getModelsJsonPath();
+    writeFileSync(modelsPath, JSON.stringify(models, null, 2), "utf-8");
+
+    // Also update config-templates
+    const repoModelsPath = join(this.config.dataDir, "..", "..", "config-templates", "models.json");
+    if (existsSync(repoModelsPath)) {
+      writeFileSync(repoModelsPath, JSON.stringify(models, null, 2), "utf-8");
+    }
+  }
+
+  private getGatewayConfig(): Record<string, unknown> {
+    const configPath = this.getOpenclawConfigPath();
+    if (!existsSync(configPath)) {
+      return {};
+    }
+    return JSON.parse(readFileSync(configPath, "utf-8"));
   }
 
   // -------------------------------------------------------------------------
@@ -847,7 +973,10 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
             <p style="font-size:32px; margin-bottom:8px;">📎</p>
             <p style="color:#94a3b8;">Kéo thả file vào đây hoặc <span style="color:#3b82f6; text-decoration:underline;">chọn file</span></p>
             <p style="color:#64748b; font-size:12px; margin-top:8px;">
-              Hỗ trợ: PDF, Word (.docx), Excel (.xlsx), CSV, TXT, Markdown, JSON
+              Hỗ trợ: <b style="color:#3b82f6;">Word (.docx)</b>, <b style="color:#22c55e;">Excel (.xlsx)</b>, PDF, CSV, TXT, Markdown, JSON
+            </p>
+            <p style="color:#475569; font-size:11px; margin-top:4px;">
+              📌 Word & Excel sẽ được tự động extract text → UTF-8 → lưu vào Knowledge Base
             </p>
           </div>
           <div id="file-preview" style="display:none; background:#0f172a; border-radius:8px; padding:12px; margin-bottom:12px;">
@@ -864,6 +993,78 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <button class="btn btn-success" onclick="uploadFile()" id="upload-btn" disabled>📤 Upload & Import</button>
           <span id="upload-progress" style="color:#94a3b8; font-size:13px; margin-left:8px;"></span>
         </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NKD CUSTOM: API Keys & Models -->
+    <!-- ============================================================ -->
+    <div class="section" style="border: 2px solid #f59e0b;">
+      <h2>🔑 NKD CUSTOM — API Keys & Models</h2>
+      <p style="color:#94a3b8; font-size:13px; margin-bottom:16px;">
+        Quản lý API Keys và Models AI. Thay đổi key sẽ tự động cập nhật cả runtime config lẫn repo.
+      </p>
+
+      <!-- Quick links -->
+      <div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:16px;">
+        <h4 style="margin-bottom:8px; font-size:14px;">🔗 Link tạo API Key (miễn phí):</h4>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <a href="https://console.groq.com/keys" target="_blank" class="btn btn-sm" style="background:#f97316; color:#fff; text-decoration:none;">🟠 Groq Console → Tạo API Key</a>
+          <a href="https://openrouter.ai/keys" target="_blank" class="btn btn-sm" style="background:#8b5cf6; color:#fff; text-decoration:none;">🟣 OpenRouter → Tạo API Key</a>
+          <a href="https://build.nvidia.com/" target="_blank" class="btn btn-sm" style="background:#76b900; color:#fff; text-decoration:none;">🟢 NVIDIA Build → Tạo API Key</a>
+          <a href="https://github.com/settings/tokens" target="_blank" class="btn btn-sm" style="background:#333; color:#fff; text-decoration:none;">⚫ GitHub Token</a>
+        </div>
+      </div>
+
+      <!-- API Keys List -->
+      <h3 style="font-size:15px; margin-bottom:10px;">📋 API Keys đang sử dụng:</h3>
+      <div id="api-keys-list" style="margin-bottom:16px;">
+        <p style="color:#64748b;">Đang tải...</p>
+      </div>
+
+      <!-- Add/Change API Key -->
+      <h3 class="collapse-toggle" onclick="toggleCollapse('nkd-add-key')" style="font-size:15px; margin-bottom:10px; cursor:pointer;">
+        ➕ Thêm/Thay đổi API Key <span style="font-size:12px; color:#94a3b8;">(click để mở)</span>
+      </h3>
+      <div id="nkd-add-key" class="collapse-body">
+        <div class="form-row">
+          <div>
+            <label>Provider</label>
+            <select id="nkd-provider">
+              <option value="groq">🟠 Groq</option>
+              <option value="openrouter">🟣 OpenRouter</option>
+              <option value="nvidia">🟢 NVIDIA</option>
+            </select>
+          </div>
+          <div>
+            <label>API Key mới</label>
+            <input type="text" id="nkd-new-key" placeholder="Paste API key ở đây...">
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:4px;">
+          <button class="btn btn-warning" onclick="replaceProviderKey()">🔄 Thay đổi key cho Provider này</button>
+        </div>
+      </div>
+
+      <!-- Models List -->
+      <h3 class="collapse-toggle" onclick="toggleCollapse('nkd-models')" style="font-size:15px; margin-top:16px; margin-bottom:10px; cursor:pointer;">
+        🤖 Models đang sử dụng <span style="font-size:12px; color:#94a3b8;">(click để mở)</span>
+      </h3>
+      <div id="nkd-models" class="collapse-body">
+        <div id="models-list" style="margin-bottom:12px;">
+          <p style="color:#64748b;">Đang tải...</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="refreshNKD()">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <!-- Gateway Info -->
+      <h3 class="collapse-toggle" onclick="toggleCollapse('nkd-gateway')" style="font-size:15px; margin-top:16px; margin-bottom:10px; cursor:pointer;">
+        🌐 Gateway Config <span style="font-size:12px; color:#94a3b8;">(click để xem)</span>
+      </h3>
+      <div id="nkd-gateway" class="collapse-body">
+        <pre id="gateway-config-output" style="background:#0f172a; padding:12px; border-radius:8px; white-space:pre-wrap; font-size:12px; color:#94a3b8; max-height:300px; overflow-y:auto;">Đang tải...</pre>
       </div>
     </div>
 
@@ -940,6 +1141,9 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
 
       // KB list
       refreshKB();
+
+      // NKD Custom: API keys + models
+      refreshNKD();
     }
 
     // -- Agent toggle --
@@ -997,6 +1201,130 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     // -- QR --
     function requestQR(channel) {
       toast('Mở terminal và chạy: openclaw ' + channel + ' setup');
+    }
+
+    // -- NKD Custom: API Keys --
+    function refreshNKD() {
+      // Load API keys
+      api('/api/nkd/apikeys').then(r => r.json()).then(d => {
+        renderApiKeys(d.keys || []);
+      }).catch(() => {});
+
+      // Load models
+      api('/api/nkd/models').then(r => r.json()).then(d => {
+        renderModels(d.models || []);
+      }).catch(() => {});
+
+      // Load gateway config
+      api('/api/nkd/gateway-config').then(r => r.json()).then(d => {
+        // Mask sensitive data for display
+        const display = JSON.parse(JSON.stringify(d));
+        if (display.gateway && display.gateway.auth) {
+          display.gateway.auth.token = display.gateway.auth.token ? display.gateway.auth.token.slice(0, 8) + '...' : '';
+        }
+        document.getElementById('gateway-config-output').textContent = JSON.stringify(display, null, 2);
+      }).catch(() => {});
+    }
+
+    const providerColors = {
+      groq: '#f97316', openrouter: '#8b5cf6', nvidia: '#76b900', github: '#333'
+    };
+
+    const providerLinks = {
+      groq: 'https://console.groq.com/keys',
+      openrouter: 'https://openrouter.ai/keys',
+      nvidia: 'https://build.nvidia.com/',
+    };
+
+    function renderApiKeys(keys) {
+      const container = document.getElementById('api-keys-list');
+      if (!keys || keys.length === 0) {
+        container.innerHTML = '<p style="color:#64748b; padding:12px;">Chưa có API key nào. Cấu hình models.json trước.</p>';
+        return;
+      }
+      container.innerHTML = keys.map((k, i) => {
+        const color = providerColors[k.provider] || '#64748b';
+        const link = providerLinks[k.provider] || '#';
+        const models = k.modelIds.map(id => '<div style="color:#94a3b8; font-size:11px; padding-left:12px;">• ' + id + '</div>').join('');
+        return '<div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:8px; border-left:4px solid ' + color + ';">' +
+          '<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">' +
+            '<span style="background:' + color + '; color:#fff; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:600;">' + k.provider.toUpperCase() + '</span>' +
+            '<code style="flex:1; color:#e2e8f0; font-size:13px; cursor:pointer;" onclick="copyToClipboard(this.dataset.key)" data-key="' + k.key + '" title="Click để copy">' + k.maskedKey + '</code>' +
+            '<button class="btn btn-sm" style="background:#334155;" onclick="toggleKeyVisibility(this, \\'' + k.key + '\\', \\'' + k.maskedKey + '\\')">👁️</button>' +
+            '<a href="' + link + '" target="_blank" class="btn btn-sm" style="background:#334155; text-decoration:none; color:#94a3b8;">🔗 Console</a>' +
+          '</div>' +
+          '<div style="font-size:12px; color:#64748b; margin-bottom:4px;">Dùng cho ' + k.modelIds.length + ' model(s):</div>' +
+          models +
+        '</div>';
+      }).join('');
+    }
+
+    function toggleKeyVisibility(btn, fullKey, maskedKey) {
+      const codeEl = btn.parentElement.querySelector('code');
+      if (codeEl.textContent === maskedKey) {
+        codeEl.textContent = fullKey;
+        btn.textContent = '🙈';
+      } else {
+        codeEl.textContent = maskedKey;
+        btn.textContent = '👁️';
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => toast('📋 Đã copy API key!')).catch(() => {});
+    }
+
+    function renderModels(models) {
+      const container = document.getElementById('models-list');
+      if (!models || models.length === 0) {
+        container.innerHTML = '<p style="color:#64748b;">Chưa có models nào.</p>';
+        return;
+      }
+      container.innerHTML = '<table>' +
+        '<tr><th>#</th><th>Model ID</th><th>Provider</th><th>Key (masked)</th></tr>' +
+        models.map((m, i) => {
+          const color = providerColors[m.provider] || '#64748b';
+          const masked = m.apiKey ? m.apiKey.slice(0, 8) + '...' + m.apiKey.slice(-4) : 'N/A';
+          return '<tr>' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td style="font-family:monospace; font-size:13px;">' + m.id + '</td>' +
+            '<td><span style="background:' + color + '; color:#fff; padding:2px 6px; border-radius:8px; font-size:11px;">' + m.provider + '</span></td>' +
+            '<td style="color:#94a3b8; font-size:12px;">' + masked + '</td>' +
+          '</tr>';
+        }).join('') +
+      '</table>';
+    }
+
+    function replaceProviderKey() {
+      const provider = document.getElementById('nkd-provider').value;
+      const newKey = document.getElementById('nkd-new-key').value.trim();
+      if (!newKey) { toast('Vui lòng nhập API key mới!', true); return; }
+      if (!confirm('⚠️ Thay đổi TẤT CẢ API key của provider "' + provider + '"?\\n\\nKey mới: ' + newKey.slice(0, 10) + '...\\n\\nĐiều này sẽ cập nhật runtime + repo config.')) return;
+
+      // First get current models to find old keys for this provider
+      api('/api/nkd/models').then(r => r.json()).then(d => {
+        const oldKeys = new Set();
+        (d.models || []).forEach(m => {
+          if (m.provider === provider) oldKeys.add(m.apiKey);
+        });
+
+        const updates = [...oldKeys].map(oldKey => ({ oldKey, newKey }));
+        if (updates.length === 0) {
+          toast('Không tìm thấy model nào của provider "' + provider + '"', true);
+          return;
+        }
+
+        api('/api/nkd/apikeys', { method: 'PUT', body: JSON.stringify(updates) })
+          .then(r => r.json()).then(result => {
+            if (result.success) {
+              toast('✅ ' + result.message + ' (' + updates.length + ' key(s) đã thay đổi)');
+              document.getElementById('nkd-new-key').value = '';
+              refreshNKD();
+            } else {
+              toast('❌ Lỗi: ' + (result.error || 'Unknown'), true);
+            }
+          });
+      });
     }
 
     // -- Knowledge Base --

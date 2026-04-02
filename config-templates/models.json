@@ -1,34 +1,34 @@
 [
   {
     "id": "groq/llama-3.3-70b-versatile",
-    "apiKey": "YOUR_GROQ_API_KEY"
+    "apiKey": "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"
   },
   {
     "id": "groq/moonshotai/kimi-k2-instruct",
-    "apiKey": "YOUR_GROQ_API_KEY"
+    "apiKey": "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"
   },
   {
     "id": "groq/openai/gpt-oss-120b",
-    "apiKey": "YOUR_GROQ_API_KEY"
+    "apiKey": "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"
   },
   {
     "id": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
-    "apiKey": "YOUR_GROQ_API_KEY"
+    "apiKey": "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"
   },
   {
     "id": "groq/llama-3.1-8b-instant",
-    "apiKey": "YOUR_GROQ_API_KEY"
+    "apiKey": "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"
   },
   {
     "id": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
-    "apiKey": "YOUR_OPENROUTER_API_KEY_1"
+    "apiKey": "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"
   },
   {
     "id": "openrouter/arcee-ai/trinity-large-preview:free",
-    "apiKey": "YOUR_OPENROUTER_API_KEY_2"
+    "apiKey": "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"
   },
   {
     "id": "openrouter/qwen/qwen3.6-plus-preview:free",
-    "apiKey": "YOUR_OPENROUTER_API_KEY_1"
+    "apiKey": "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"
   }
 ]
