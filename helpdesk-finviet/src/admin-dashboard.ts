@@ -488,11 +488,8 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
 
     writeFileSync(modelsPath, JSON.stringify(models, null, 2), "utf-8");
 
-    // Also update config-templates/models.json in repo
-    const repoModelsPath = join(this.config.dataDir, "..", "..", "config-templates", "models.json");
-    if (existsSync(repoModelsPath)) {
-      writeFileSync(repoModelsPath, JSON.stringify(models, null, 2), "utf-8");
-    }
+    // NOTE: Do NOT sync real keys to config-templates (repo) to avoid secret exposure.
+    // config-templates/models.json keeps placeholder keys only.
   }
 
   private getModelsConfig(): { models: Array<{ id: string; apiKey: string; provider: string }> } {
@@ -513,11 +510,7 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
     const modelsPath = this.getModelsJsonPath();
     writeFileSync(modelsPath, JSON.stringify(models, null, 2), "utf-8");
 
-    // Also update config-templates
-    const repoModelsPath = join(this.config.dataDir, "..", "..", "config-templates", "models.json");
-    if (existsSync(repoModelsPath)) {
-      writeFileSync(repoModelsPath, JSON.stringify(models, null, 2), "utf-8");
-    }
+    // NOTE: Do NOT sync real keys to config-templates (repo) to avoid secret exposure.
   }
 
   private getGatewayConfig(): Record<string, unknown> {
