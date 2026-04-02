@@ -5,13 +5,13 @@
  * Operates directly on JSON files; no external HTTP server needed.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
 import { createHash } from "node:crypto";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
+import { join } from "node:path";
+import { scheduleGatewaySigusr1Restart } from "../../infra/restart.js";
 import { ErrorCodes, errorShape } from "../protocol/index.js";
 import { formatForLog } from "../ws-log.js";
-import { scheduleGatewaySigusr1Restart } from "../../infra/restart.js";
 import type { GatewayRequestHandlers } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -123,7 +123,9 @@ Bạn là **${profile.name}** — bot hỗ trợ Helpdesk IT của công ty **${
     // Also write to helpdesk-finviet/AGENTS.md for reference
     writeFileSync(agentsMdPath(), finalContent, "utf-8");
 
-    console.log(`[nkd] ✓ Synced ${idx.documents.length} KB docs → workspace AGENTS.md (${finalContent.length} chars)`);
+    console.log(
+      `[nkd] ✓ Synced ${idx.documents.length} KB docs → workspace AGENTS.md (${finalContent.length} chars)`,
+    );
   } catch (err) {
     console.error("[nkd] ✗ Failed to sync KB to workspace:", err);
   }
@@ -159,7 +161,13 @@ function loadKbIndex(): KBIndex {
   if (existsSync(p)) {
     return JSON.parse(readFileSync(p, "utf-8")) as KBIndex;
   }
-  return { version: 1, documents: [], lastUpdated: new Date().toISOString(), totalDocuments: 0, totalChars: 0 };
+  return {
+    version: 1,
+    documents: [],
+    lastUpdated: new Date().toISOString(),
+    totalDocuments: 0,
+    totalChars: 0,
+  };
 }
 
 function saveKbIndex(idx: KBIndex): void {
@@ -191,7 +199,8 @@ function loadProfile(): AgentProfile {
   return {
     name: "AI Helpdesk FinViet",
     company: "FinViet",
-    greeting: "Xin chào! Tôi là AI Helpdesk FinViet 🤖. Tôi có thể hỗ trợ bạn vấn đề IT gì hôm nay?",
+    greeting:
+      "Xin chào! Tôi là AI Helpdesk FinViet 🤖. Tôi có thể hỗ trợ bạn vấn đề IT gì hôm nay?",
     language: "vi",
     tone: "professional",
     scope: "IT Helpdesk: mạng, máy tính, phần mềm, tài khoản, bảo mật, email, Office 365",
@@ -215,9 +224,35 @@ function regenerateAgentsMd(_p: AgentProfile): void {
 // ---------------------------------------------------------------------------
 
 const STOP_WORDS_VI = new Set([
-  "và", "hoặc", "của", "cho", "với", "trong", "ngoài", "là", "có", "không",
-  "được", "để", "từ", "đến", "này", "đó", "các", "một", "những", "thì",
-  "nhưng", "nếu", "khi", "như", "đã", "sẽ", "đang", "rất", "cũng",
+  "và",
+  "hoặc",
+  "của",
+  "cho",
+  "với",
+  "trong",
+  "ngoài",
+  "là",
+  "có",
+  "không",
+  "được",
+  "để",
+  "từ",
+  "đến",
+  "này",
+  "đó",
+  "các",
+  "một",
+  "những",
+  "thì",
+  "nhưng",
+  "nếu",
+  "khi",
+  "như",
+  "đã",
+  "sẽ",
+  "đang",
+  "rất",
+  "cũng",
 ]);
 
 function tokenize(text: string): string[] {
@@ -263,7 +298,12 @@ function searchDocs(
 // Ticket stats (read-only from tickets dir)
 // ---------------------------------------------------------------------------
 
-function loadTicketStats(): { total: number; open: number; closed: number; byChannel: Record<string, number> } {
+function loadTicketStats(): {
+  total: number;
+  open: number;
+  closed: number;
+  byChannel: Record<string, number>;
+} {
   const ticketsDir = join(dataDir(), "tickets");
   const storePath = join(ticketsDir, "tickets.json");
   if (!existsSync(storePath)) {
@@ -301,7 +341,9 @@ type AuthProfile = {
 
 function loadAuthProfiles(): AuthProfile[] {
   const p = authProfilesPath();
-  if (!existsSync(p)) { return []; }
+  if (!existsSync(p)) {
+    return [];
+  }
   try {
     const raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey?: string }>;
     const result: AuthProfile[] = [];
@@ -319,7 +361,9 @@ function loadAuthProfiles(): AuthProfile[] {
 }
 
 function maskApiKey(key: string): string {
-  if (key.length <= 12) { return "***"; }
+  if (key.length <= 12) {
+    return "***";
+  }
   return `${key.slice(0, 8)}...${key.slice(-4)}`;
 }
 
@@ -329,24 +373,32 @@ function saveAuthProfile(provider: string, profile: string, apiKey: string): voi
   if (existsSync(p)) {
     try {
       raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey: string }>;
-    } catch { /* start fresh */ }
+    } catch {
+      /* start fresh */
+    }
   }
   const key = `${provider}:${profile}`;
   raw[key] = { apiKey };
   // Ensure parent dir exists
   const dir = join(p, "..");
-  if (!existsSync(dir)) { mkdirSync(dir, { recursive: true }); }
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
   writeFileSync(p, JSON.stringify(raw, null, 2), "utf-8");
   console.log(`[nkd] ✓ Saved API key for ${key}`);
 }
 
 function deleteAuthProfile(provider: string, profile: string): boolean {
   const p = authProfilesPath();
-  if (!existsSync(p)) { return false; }
+  if (!existsSync(p)) {
+    return false;
+  }
   try {
     const raw = JSON.parse(readFileSync(p, "utf-8")) as Record<string, { apiKey: string }>;
     const key = `${provider}:${profile}`;
-    if (!(key in raw)) { return false; }
+    if (!(key in raw)) {
+      return false;
+    }
     delete raw[key];
     writeFileSync(p, JSON.stringify(raw, null, 2), "utf-8");
     console.log(`[nkd] ✓ Deleted API key for ${key}`);
@@ -369,12 +421,16 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       for (const d of idx.documents) {
         byCategory[d.category] = (byCategory[d.category] ?? 0) + 1;
       }
-      respond(true, {
-        totalDocuments: idx.totalDocuments,
-        totalChars: idx.totalChars,
-        byCategory,
-        lastUpdated: idx.lastUpdated,
-      }, undefined);
+      respond(
+        true,
+        {
+          totalDocuments: idx.totalDocuments,
+          totalChars: idx.totalChars,
+          byCategory,
+          lastUpdated: idx.lastUpdated,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -429,7 +485,11 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       const hash = createHash("sha256").update(content).digest("hex");
       const existing = idx.documents.find((d) => d.hash === hash);
       if (existing) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "Tài liệu đã tồn tại (trùng nội dung)"));
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "Tài liệu đã tồn tại (trùng nội dung)"),
+        );
         return;
       }
       const id = `kb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -466,7 +526,11 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         title?: string;
       };
       if (!filename || !base64) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "filename and base64 are required"));
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "filename and base64 are required"),
+        );
         return;
       }
 
@@ -484,11 +548,25 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
           const result = await pdfParse(buf);
           text = (result.text || "").trim();
           if (!text) {
-            respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `PDF "${filename}" không chứa text (có thể là PDF scan/image). Hãy chuyển sang text trước khi import.`));
+            respond(
+              false,
+              undefined,
+              errorShape(
+                ErrorCodes.INVALID_REQUEST,
+                `PDF "${filename}" không chứa text (có thể là PDF scan/image). Hãy chuyển sang text trước khi import.`,
+              ),
+            );
             return;
           }
         } catch (pdfErr: any) {
-          respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể đọc PDF "${filename}": ${pdfErr?.message || "pdf-parse error"}. Hãy copy text thủ công và dùng Import Text.`));
+          respond(
+            false,
+            undefined,
+            errorShape(
+              ErrorCodes.INVALID_REQUEST,
+              `Không thể đọc PDF "${filename}": ${pdfErr?.message || "pdf-parse error"}. Hãy copy text thủ công và dùng Import Text.`,
+            ),
+          );
           return;
         }
       } else if ([".docx", ".doc"].includes(ext)) {
@@ -498,11 +576,25 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
           const result = await mammoth.extractRawText({ buffer: buf });
           text = (result.value || "").trim();
           if (!text) {
-            respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `File Word "${filename}" không chứa text. Hãy copy text thủ công và dùng "Import Text".`));
+            respond(
+              false,
+              undefined,
+              errorShape(
+                ErrorCodes.INVALID_REQUEST,
+                `File Word "${filename}" không chứa text. Hãy copy text thủ công và dùng "Import Text".`,
+              ),
+            );
             return;
           }
         } catch (docErr: any) {
-          respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể đọc file Word "${filename}": ${docErr?.message || "mammoth error"}. Hãy copy text thủ công và dùng "Import Text".`));
+          respond(
+            false,
+            undefined,
+            errorShape(
+              ErrorCodes.INVALID_REQUEST,
+              `Không thể đọc file Word "${filename}": ${docErr?.message || "mammoth error"}. Hãy copy text thủ công và dùng "Import Text".`,
+            ),
+          );
           return;
         }
       } else if ([".xlsx", ".xls"].includes(ext)) {
@@ -513,7 +605,9 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
           const sheetTexts: string[] = [];
           for (const sheetName of workbook.SheetNames) {
             const sheet = workbook.Sheets[sheetName];
-            if (!sheet) { continue; }
+            if (!sheet) {
+              continue;
+            }
             const csv = XLSX.utils.sheet_to_csv(sheet, { FS: "\t", RS: "\n" });
             if (csv.trim()) {
               sheetTexts.push(`=== Sheet: ${sheetName} ===\n${csv.trim()}`);
@@ -521,11 +615,25 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
           }
           text = sheetTexts.join("\n\n");
           if (!text.trim()) {
-            respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `File Excel "${filename}" không chứa dữ liệu. Hãy copy text thủ công và dùng "Import Text".`));
+            respond(
+              false,
+              undefined,
+              errorShape(
+                ErrorCodes.INVALID_REQUEST,
+                `File Excel "${filename}" không chứa dữ liệu. Hãy copy text thủ công và dùng "Import Text".`,
+              ),
+            );
             return;
           }
         } catch (xlsErr: any) {
-          respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể đọc file Excel "${filename}": ${xlsErr?.message || "xlsx error"}. Hãy copy text thủ công và dùng "Import Text".`));
+          respond(
+            false,
+            undefined,
+            errorShape(
+              ErrorCodes.INVALID_REQUEST,
+              `Không thể đọc file Excel "${filename}": ${xlsErr?.message || "xlsx error"}. Hãy copy text thủ công và dùng "Import Text".`,
+            ),
+          );
           return;
         }
       } else {
@@ -535,12 +643,23 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
 
       // Validate: reject if content looks like binary/PDF raw data
       if (text.startsWith("%PDF") || /[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 500))) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `File "${filename}" chứa dữ liệu binary, không phải text. Hãy copy text thủ công và dùng "Import Text".`));
+        respond(
+          false,
+          undefined,
+          errorShape(
+            ErrorCodes.INVALID_REQUEST,
+            `File "${filename}" chứa dữ liệu binary, không phải text. Hãy copy text thủ công và dùng "Import Text".`,
+          ),
+        );
         return;
       }
 
       if (!text.trim()) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không thể extract text từ file "${filename}"`));
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, `Không thể extract text từ file "${filename}"`),
+        );
         return;
       }
 
@@ -548,7 +667,11 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       const hash = createHash("sha256").update(text).digest("hex");
       const existing = idx.documents.find((d) => d.hash === hash);
       if (existing) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "Tài liệu đã tồn tại (trùng nội dung)"));
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "Tài liệu đã tồn tại (trùng nội dung)"),
+        );
         return;
       }
 
@@ -559,7 +682,12 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         title: title?.trim() || text.split("\n")[0]?.slice(0, 100) || filename,
         content: text,
         category: category || "general",
-        tags: tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+        tags: tags
+          ? tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
         source: filename,
         importedAt: now,
         updatedAt: now,
@@ -569,11 +697,15 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       idx.documents.push(doc);
       saveKbIndex(idx);
       syncKbToWorkspace();
-      respond(true, {
-        success: true,
-        documentId: id,
-        metadata: { format: ext.replace(".", ""), extractedChars: text.length },
-      }, undefined);
+      respond(
+        true,
+        {
+          success: true,
+          documentId: id,
+          metadata: { format: ext.replace(".", ""), extractedChars: text.length },
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -664,12 +796,16 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       const profile = loadProfile();
       const agentsMd = existsSync(agentsMdPath()) ? readFileSync(agentsMdPath(), "utf-8") : "";
       const ticketStats = loadTicketStats();
-      respond(true, {
-        kbIndex: idx,
-        agentProfile: profile,
-        agentsMd,
-        ticketStats,
-      }, undefined);
+      respond(
+        true,
+        {
+          kbIndex: idx,
+          agentProfile: profile,
+          agentsMd,
+          ticketStats,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -688,7 +824,10 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         const idx = data.kbIndex;
         idx.lastUpdated = new Date().toISOString();
         idx.totalDocuments = idx.documents?.length ?? 0;
-        idx.totalChars = (idx.documents ?? []).reduce((s, d) => s + (d.charCount ?? d.content?.length ?? 0), 0);
+        idx.totalChars = (idx.documents ?? []).reduce(
+          (s, d) => s + (d.charCount ?? d.content?.length ?? 0),
+          0,
+        );
         writeFileSync(kbIndexPath(), JSON.stringify(idx, null, 2), "utf-8");
         console.log(`[nkd] ✓ Saved KB index: ${idx.totalDocuments} docs, ${idx.totalChars} chars`);
       }
@@ -730,11 +869,15 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       syncKbToWorkspace();
       const wPath = workspaceAgentsMdPath();
       const content = existsSync(wPath) ? readFileSync(wPath, "utf-8") : "";
-      respond(true, {
-        success: true,
-        workspacePath: wPath,
-        chars: content.length,
-      }, undefined);
+      respond(
+        true,
+        {
+          success: true,
+          workspacePath: wPath,
+          chars: content.length,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -756,12 +899,16 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         saveKbIndex(idx);
         syncKbToWorkspace();
       }
-      respond(true, {
-        success: true,
-        removedCount: removed.length,
-        removedTitles: removed,
-        remainingDocs: idx.documents.length,
-      }, undefined);
+      respond(
+        true,
+        {
+          success: true,
+          removedCount: removed.length,
+          removedTitles: removed,
+          remainingDocs: idx.documents.length,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -775,12 +922,16 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         reason: "nkd.gateway.restart (UI button)",
       });
       console.log("[nkd] Gateway restart scheduled:", result);
-      respond(true, {
-        success: true,
-        message: "Gateway restart đã được lên lịch. Gateway sẽ khởi động lại trong vài giây.",
-        pid: result.pid,
-        delayMs: result.delayMs,
-      }, undefined);
+      respond(
+        true,
+        {
+          success: true,
+          message: "Gateway restart đã được lên lịch. Gateway sẽ khởi động lại trong vài giây.",
+          pid: result.pid,
+          delayMs: result.delayMs,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -810,14 +961,22 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
         apiKey?: string;
       };
       if (!provider || !apiKey) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "provider and apiKey are required"));
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "provider and apiKey are required"),
+        );
         return;
       }
       saveAuthProfile(provider, profile || "default", apiKey);
-      respond(true, {
-        success: true,
-        message: `Đã cập nhật API key cho ${provider}:${profile || "default"}`,
-      }, undefined);
+      respond(
+        true,
+        {
+          success: true,
+          message: `Đã cập nhật API key cho ${provider}:${profile || "default"}`,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
@@ -836,13 +995,24 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       }
       const deleted = deleteAuthProfile(provider, profile || "default");
       if (!deleted) {
-        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `Không tìm thấy API key cho ${provider}:${profile || "default"}`));
+        respond(
+          false,
+          undefined,
+          errorShape(
+            ErrorCodes.INVALID_REQUEST,
+            `Không tìm thấy API key cho ${provider}:${profile || "default"}`,
+          ),
+        );
         return;
       }
-      respond(true, {
-        success: true,
-        message: `Đã xóa API key cho ${provider}:${profile || "default"}`,
-      }, undefined);
+      respond(
+        true,
+        {
+          success: true,
+          message: `Đã xóa API key cho ${provider}:${profile || "default"}`,
+        },
+        undefined,
+      );
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }

@@ -7,12 +7,12 @@
  * - Real-time status monitoring
  */
 
-import http from "node:http";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import http from "node:http";
 import { join } from "node:path";
 import { KnowledgeBase, type KBCategory, type KBImportResult } from "./knowledge-base.js";
-import { TicketManager } from "./ticket-system.js";
 import { RetryEngine } from "./retry-engine.js";
+import { TicketManager } from "./ticket-system.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -94,7 +94,8 @@ export class AdminDashboard {
     return {
       name: "AI Helpdesk FinViet",
       company: "FinViet",
-      greeting: "Xin chào! Tôi là AI Helpdesk FinViet 🤖. Tôi có thể hỗ trợ bạn vấn đề IT gì hôm nay?",
+      greeting:
+        "Xin chào! Tôi là AI Helpdesk FinViet 🤖. Tôi có thể hỗ trợ bạn vấn đề IT gì hôm nay?",
       language: "vi",
       tone: "professional",
       scope: "IT Helpdesk: mạng, máy tính, phần mềm, tài khoản, bảo mật, email, Office 365",
@@ -115,7 +116,11 @@ export class AdminDashboard {
       friendly: "Thân thiện, gần gũi nhưng vẫn rõ ràng.",
       casual: "Thoải mái, dễ hiểu, như đồng nghiệp hỗ trợ nhau.",
     };
-    const langMap: Record<string, string> = { vi: "tiếng Việt", en: "English", both: "tiếng Việt (ưu tiên) và English" };
+    const langMap: Record<string, string> = {
+      vi: "tiếng Việt",
+      en: "English",
+      both: "tiếng Việt (ưu tiên) và English",
+    };
 
     const md = `Bạn là **${p.name}** — trợ lý ${p.scope} của công ty ${p.company}.
 
@@ -257,7 +262,11 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
 
     // --- Health ---
     if (path === "/health") {
-      this.sendJson(res, 200, { status: "ok", agent: "AI Helpdesk FinViet", enabled: this.agentEnabled });
+      this.sendJson(res, 200, {
+        status: "ok",
+        agent: "AI Helpdesk FinViet",
+        enabled: this.agentEnabled,
+      });
       return;
     }
 
@@ -446,12 +455,17 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
     return join(home, ".openclaw", "openclaw.json");
   }
 
-  private getApiKeys(): { keys: Array<{ provider: string; key: string; maskedKey: string; modelIds: string[] }> } {
+  private getApiKeys(): {
+    keys: Array<{ provider: string; key: string; maskedKey: string; modelIds: string[] }>;
+  } {
     const modelsPath = this.getModelsJsonPath();
     if (!existsSync(modelsPath)) {
       return { keys: [] };
     }
-    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{ id: string; apiKey: string }>;
+    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{
+      id: string;
+      apiKey: string;
+    }>;
 
     // Group by unique API keys
     const keyMap = new Map<string, { provider: string; key: string; modelIds: string[] }>();
@@ -476,7 +490,10 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
     const modelsPath = this.getModelsJsonPath();
     if (!existsSync(modelsPath)) return;
 
-    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{ id: string; apiKey: string }>;
+    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{
+      id: string;
+      apiKey: string;
+    }>;
 
     for (const { oldKey, newKey } of updates) {
       for (const m of models) {
@@ -497,7 +514,10 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
     if (!existsSync(modelsPath)) {
       return { models: [] };
     }
-    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{ id: string; apiKey: string }>;
+    const models = JSON.parse(readFileSync(modelsPath, "utf-8")) as Array<{
+      id: string;
+      apiKey: string;
+    }>;
     return {
       models: models.map((m) => ({
         ...m,
@@ -561,7 +581,9 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
   private readBody(req: http.IncomingMessage): Promise<string> {
     return new Promise((resolve) => {
       let body = "";
-      req.on("data", (chunk) => { body += chunk; });
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
       req.on("end", () => resolve(body));
     });
   }
@@ -569,7 +591,9 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
   private readBodyRaw(req: http.IncomingMessage): Promise<Buffer> {
     return new Promise((resolve) => {
       const chunks: Buffer[] = [];
-      req.on("data", (chunk: Buffer) => { chunks.push(chunk); });
+      req.on("data", (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
       req.on("end", () => resolve(Buffer.concat(chunks)));
     });
   }
@@ -604,12 +628,20 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
         const { fileBuffer, filename, fields } = this.parseMultipart(rawBody, boundary);
 
         if (!fileBuffer || !filename) {
-          this.sendJson(res, 400, { success: false, error: "Không tìm thấy file trong request. Vui lòng chọn file để upload." });
+          this.sendJson(res, 400, {
+            success: false,
+            error: "Không tìm thấy file trong request. Vui lòng chọn file để upload.",
+          });
           return;
         }
 
         const category = (fields.category ?? "general") as KBCategory;
-        const tags = fields.tags ? fields.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
+        const tags = fields.tags
+          ? fields.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [];
 
         const result = await this.kb.importBuffer(fileBuffer, filename, category, tags);
 
@@ -628,13 +660,20 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
         const { filename, base64, category, tags, title } = JSON.parse(body);
 
         if (!base64 || !filename) {
-          this.sendJson(res, 400, { success: false, error: "Cần 'filename' và 'base64' trong request body." });
+          this.sendJson(res, 400, {
+            success: false,
+            error: "Cần 'filename' và 'base64' trong request body.",
+          });
           return;
         }
 
         const fileBuffer = Buffer.from(base64, "base64");
         const cat = (category ?? "general") as KBCategory;
-        const tagList = tags ? (Array.isArray(tags) ? tags : tags.split(",").map((t: string) => t.trim())) : [];
+        const tagList = tags
+          ? Array.isArray(tags)
+            ? tags
+            : tags.split(",").map((t: string) => t.trim())
+          : [];
 
         const result = await this.kb.importBuffer(fileBuffer, filename, cat, tagList);
 
@@ -704,7 +743,9 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
       const bodyBuf = part.subarray(headerEnd + 4);
 
       // Parse Content-Disposition
-      const dispositionMatch = headerStr.match(/Content-Disposition:\s*form-data;\s*name="([^"]+)"(?:;\s*filename="([^"]*)")?/i);
+      const dispositionMatch = headerStr.match(
+        /Content-Disposition:\s*form-data;\s*name="([^"]+)"(?:;\s*filename="([^"]*)")?/i,
+      );
       if (!dispositionMatch) continue;
 
       const fieldName = dispositionMatch[1];
@@ -727,10 +768,18 @@ IT Team sẽ phản hồi trong vòng {thời gian SLA}.
   // Accessors
   // -------------------------------------------------------------------------
 
-  getKnowledgeBase(): KnowledgeBase { return this.kb; }
-  getTicketManager(): TicketManager { return this.tickets; }
-  getRetryEngine(): RetryEngine { return this.retryEngine; }
-  isAgentEnabled(): boolean { return this.agentEnabled; }
+  getKnowledgeBase(): KnowledgeBase {
+    return this.kb;
+  }
+  getTicketManager(): TicketManager {
+    return this.tickets;
+  }
+  getRetryEngine(): RetryEngine {
+    return this.retryEngine;
+  }
+  isAgentEnabled(): boolean {
+    return this.agentEnabled;
+  }
 }
 
 // ---------------------------------------------------------------------------
