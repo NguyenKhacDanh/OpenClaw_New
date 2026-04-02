@@ -140,3 +140,6 @@ changelog/fragments/
 
 gateway-stdout.log
 gateway-stderr.log
+
+gw-*.log
+gateway-*.log

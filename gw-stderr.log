@@ -1,4 +1,0 @@
-2026-04-02T14:16:33.277+07:00 Config warnings:\n- plugins.entries.zalouser: plugin zalouser: duplicate plugin id detected; global plugin will be overridden by bundled plugin (C:\Users\Administrator\.openclaw\extensions\zalouser\index.ts)
-[90m2026-04-02T14:17:00.517+07:00[39m [36m[gateway][39m [33m⚠️  Gateway is binding to a non-loopback address. Ensure authentication is configured before exposing to public networks.[39m
-[90m2026-04-02T14:17:00.519+07:00[39m [36m[gateway][39m [33m⚠️  gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true is enabled. Host-header origin fallback weakens origin checks and should only be used as break-glass.[39m
-[90m2026-04-02T14:17:00.653+07:00[39m [36m[gateway][39m [33msecurity warning: dangerous config flags enabled: gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true, gateway.controlUi.dangerouslyDisableDeviceAuth=true. Run `openclaw security audit`.[39m
