@@ -326,6 +326,13 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
         >
           🧹 Sessions
         </button>
+        <button
+          class="nkd-tab-btn"
+          id="nkd-subtab-workspace"
+          @click=${() => nkdSwitchSubtab("workspace")}
+        >
+          📝 Workspace
+        </button>
       </div>
 
       <!-- KB -->
@@ -906,6 +913,94 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
           </div>
         </div>
       </div>
+
+      <!-- Workspace Files (SOUL.md + IDENTITY.md) -->
+      <div id="nkd-panel-workspace" style="display:none;">
+        <div class="nkd-section">
+          <h2>📝 Workspace Files</h2>
+          <p style="color:var(--color-muted); font-size:13px; margin-bottom:16px;">
+            Chỉnh sửa trực tiếp SOUL.md và IDENTITY.md — bot đọc runtime từ đây.
+          </p>
+
+          <!-- Agent Name Detection -->
+          <div id="nkd-ws-agentname-box" style="margin-bottom:16px; padding:12px; background:var(--color-bg, #0f172a); border-radius:8px; border:1px solid var(--color-border, #334155);">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:14px; font-weight:600;">🤖 Tên Zalo Agent:</span>
+              <span id="nkd-ws-agentname" style="color:var(--color-success, #4ade80); font-weight:700; font-size:15px;">
+                đang tải...
+              </span>
+              <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                <input
+                  class="nkd-input"
+                  id="nkd-ws-oldname"
+                  style="width:140px; font-size:12px;"
+                  placeholder="Tên cũ (vd: Cu Đen)"
+                />
+                <span style="color:var(--color-muted);">→</span>
+                <input
+                  class="nkd-input"
+                  id="nkd-ws-newname"
+                  style="width:140px; font-size:12px;"
+                  placeholder="Tên mới (auto)"
+                />
+                <button class="nkd-btn nkd-btn-sm" @click=${() => nkdReplaceBotName()}>
+                  🔄 Đổi tên
+                </button>
+              </div>
+            </div>
+            <p style="color:var(--color-muted); font-size:11px; margin:6px 0 0;">
+              Tự động lấy tên từ Zalo Agent đang chạy. Dùng "Đổi tên" để replace tên cũ → tên mới trong cả SOUL + IDENTITY.
+            </p>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <label class="nkd-label" style="margin-bottom:0; flex:1; font-size:15px; font-weight:600;">
+                🧠 SOUL.md — Quy tắc cốt lõi
+              </label>
+              <button class="nkd-btn nkd-btn-success nkd-btn-sm" @click=${() => nkdSaveSoul()}>
+                💾 Lưu SOUL
+              </button>
+              <button class="nkd-btn nkd-btn-sm" @click=${() => nkdLoadSoul()}>
+                🔄 Tải lại
+              </button>
+            </div>
+            <textarea
+              class="nkd-textarea"
+              id="nkd-ws-soul"
+              style="min-height:300px; max-height:500px; font-family:monospace; font-size:13px; white-space:pre-wrap;"
+              placeholder="Loading SOUL.md..."
+            ></textarea>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <label class="nkd-label" style="margin-bottom:0; flex:1; font-size:15px; font-weight:600;">
+                🪪 IDENTITY.md — Danh tính & cách trả lời
+              </label>
+              <button class="nkd-btn nkd-btn-success nkd-btn-sm" @click=${() => nkdSaveIdentity()}>
+                💾 Lưu IDENTITY
+              </button>
+              <button class="nkd-btn nkd-btn-sm" @click=${() => nkdLoadIdentity()}>
+                🔄 Tải lại
+              </button>
+            </div>
+            <textarea
+              class="nkd-textarea"
+              id="nkd-ws-identity"
+              style="min-height:400px; max-height:600px; font-family:monospace; font-size:13px; white-space:pre-wrap;"
+              placeholder="Loading IDENTITY.md..."
+            ></textarea>
+          </div>
+
+          <div style="padding:12px; background:var(--color-bg, #0f172a); border-radius:8px; border:1px solid var(--color-border, #334155);">
+            <p style="color:var(--color-muted); font-size:12px; margin:0;">
+              💡 <strong>Lưu ý:</strong> Thay đổi có hiệu lực ngay — bot sẽ đọc file mới từ lần trả lời tiếp theo.<br/>
+              Tên bot trong SOUL/IDENTITY nên trùng với tên Zalo Agent đã cấu hình.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -915,7 +1010,7 @@ export function renderNkdCustom(props: NkdCustomProps): TemplateResult {
 // ---------------------------------------------------------------------------
 
 function nkdSwitchSubtab(tab: string): void {
-  for (const p of ["kb", "agent", "channels", "tickets", "apikeys", "sessions"]) {
+  for (const p of ["kb", "agent", "channels", "tickets", "apikeys", "sessions", "workspace"]) {
     const panel = document.getElementById(`nkd-panel-${p}`);
     const btn = document.getElementById(`nkd-subtab-${p}`);
     if (panel) panel.style.display = p === tab ? "block" : "none";
@@ -929,6 +1024,7 @@ function nkdSwitchSubtab(tab: string): void {
   if (tab === "tickets") nkdLoadTicketStats();
   if (tab === "apikeys") nkdRefreshApiKeys();
   if (tab === "sessions") nkdRefreshSessions();
+  if (tab === "workspace") nkdLoadWorkspace();
 }
 
 function nkdToast(msg: string, isError = false): void {
@@ -1869,6 +1965,144 @@ async function nkdClearSession(sessionId: string): Promise<void> {
 (window as Record<string, unknown>).nkdClearSession = nkdClearSession;
 (window as Record<string, unknown>).nkdClearAllSessions = nkdClearAllSessions;
 (window as Record<string, unknown>).nkdRefreshSessions = nkdRefreshSessions;
+
+// ---------------------------------------------------------------------------
+// Workspace files (SOUL.md + IDENTITY.md)
+// ---------------------------------------------------------------------------
+
+async function nkdLoadWorkspace(): Promise<void> {
+  await Promise.all([nkdLoadSoul(), nkdLoadIdentity(), nkdLoadAgentName()]);
+}
+
+async function nkdLoadAgentName(): Promise<void> {
+  const nameEl = document.getElementById("nkd-ws-agentname");
+  const newNameInput = document.getElementById("nkd-ws-newname") as HTMLInputElement | null;
+  try {
+    const d = await rpc("nkd.workspace.agentName");
+    if (d.name) {
+      if (nameEl) {
+        nameEl.textContent = `${d.name}`;
+        nameEl.style.color = "var(--color-success, #4ade80)";
+      }
+      // Auto-fill "new name" input
+      if (newNameInput && !newNameInput.value) {
+        newNameInput.value = d.name;
+      }
+    } else {
+      if (nameEl) {
+        nameEl.textContent = "(chưa kết nối Zalo)";
+        nameEl.style.color = "var(--color-muted)";
+      }
+    }
+  } catch {
+    if (nameEl) {
+      nameEl.textContent = "(lỗi)";
+      nameEl.style.color = "var(--color-error, #ef4444)";
+    }
+  }
+}
+
+function nkdReplaceBotName(): void {
+  const oldNameInput = document.getElementById("nkd-ws-oldname") as HTMLInputElement | null;
+  const newNameInput = document.getElementById("nkd-ws-newname") as HTMLInputElement | null;
+  const soulEl = document.getElementById("nkd-ws-soul") as HTMLTextAreaElement | null;
+  const identityEl = document.getElementById("nkd-ws-identity") as HTMLTextAreaElement | null;
+
+  const oldName = oldNameInput?.value?.trim();
+  const newName = newNameInput?.value?.trim();
+
+  if (!oldName || !newName) {
+    nkdToast("⚠️ Nhập cả tên cũ và tên mới!", true);
+    return;
+  }
+  if (oldName === newName) {
+    nkdToast("Tên cũ và mới giống nhau!", true);
+    return;
+  }
+
+  let count = 0;
+  const re = new RegExp(oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+
+  if (soulEl && soulEl.value) {
+    const before = soulEl.value;
+    soulEl.value = soulEl.value.replace(re, newName);
+    if (soulEl.value !== before) { count++; }
+  }
+  if (identityEl && identityEl.value) {
+    const before = identityEl.value;
+    identityEl.value = identityEl.value.replace(re, newName);
+    if (identityEl.value !== before) { count++; }
+  }
+
+  if (count > 0) {
+    nkdToast(`✅ Đã thay "${oldName}" → "${newName}" trong ${count} file(s). Nhớ bấm Lưu!`);
+  } else {
+    nkdToast(`⚠️ Không tìm thấy "${oldName}" trong SOUL/IDENTITY`, true);
+  }
+}
+
+async function nkdLoadSoul(): Promise<void> {
+  const el = document.getElementById("nkd-ws-soul") as HTMLTextAreaElement;
+  if (!el) return;
+  try {
+    const d = await rpc("nkd.workspace.soul");
+    el.value = d.content || "";
+  } catch (err: any) {
+    el.value = `⚠️ Lỗi tải SOUL.md: ${err.message}`;
+  }
+}
+
+async function nkdLoadIdentity(): Promise<void> {
+  const el = document.getElementById("nkd-ws-identity") as HTMLTextAreaElement;
+  if (!el) return;
+  try {
+    const d = await rpc("nkd.workspace.identity");
+    el.value = d.content || "";
+  } catch (err: any) {
+    el.value = `⚠️ Lỗi tải IDENTITY.md: ${err.message}`;
+  }
+}
+
+async function nkdSaveSoul(): Promise<void> {
+  const el = document.getElementById("nkd-ws-soul") as HTMLTextAreaElement;
+  if (!el) return;
+  const content = el.value;
+  if (!content.trim()) {
+    nkdToast("SOUL.md không được để trống!", true);
+    return;
+  }
+  try {
+    await rpc("nkd.workspace.soulSave", { content });
+    nkdToast("💾 Đã lưu SOUL.md — bot sẽ dùng từ tin nhắn tiếp theo");
+  } catch (err: any) {
+    nkdToast(`❌ Lưu SOUL.md thất bại: ${err.message}`, true);
+  }
+}
+
+async function nkdSaveIdentity(): Promise<void> {
+  const el = document.getElementById("nkd-ws-identity") as HTMLTextAreaElement;
+  if (!el) return;
+  const content = el.value;
+  if (!content.trim()) {
+    nkdToast("IDENTITY.md không được để trống!", true);
+    return;
+  }
+  try {
+    await rpc("nkd.workspace.identitySave", { content });
+    nkdToast("💾 Đã lưu IDENTITY.md — bot sẽ dùng từ tin nhắn tiếp theo");
+  } catch (err: any) {
+    nkdToast(`❌ Lưu IDENTITY.md thất bại: ${err.message}`, true);
+  }
+}
+
+// Expose workspace functions to inline handlers
+(window as Record<string, unknown>).nkdLoadWorkspace = nkdLoadWorkspace;
+(window as Record<string, unknown>).nkdLoadSoul = nkdLoadSoul;
+(window as Record<string, unknown>).nkdLoadIdentity = nkdLoadIdentity;
+(window as Record<string, unknown>).nkdSaveSoul = nkdSaveSoul;
+(window as Record<string, unknown>).nkdSaveIdentity = nkdSaveIdentity;
+(window as Record<string, unknown>).nkdReplaceBotName = nkdReplaceBotName;
+(window as Record<string, unknown>).nkdLoadAgentName = nkdLoadAgentName;
 
 // ---------------------------------------------------------------------------
 // Auto-init

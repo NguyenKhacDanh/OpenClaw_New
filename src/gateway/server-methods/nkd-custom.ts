@@ -50,14 +50,24 @@ function agentsMdPath(): string {
   return join(process.cwd(), "helpdesk-finviet", "AGENTS.md");
 }
 
-// Path to the REAL workspace AGENTS.md that the bot reads at runtime
-function workspaceAgentsMdPath(): string {
-  // Check dev workspace first, fallback to production
-  const devPath = join(homedir(), ".openclaw-dev", "workspace", "AGENTS.md");
-  const prodPath = join(homedir(), ".openclaw", "workspace", "AGENTS.md");
-  // Prefer the one that exists; default to production
+// Path to the REAL workspace files that the bot reads at runtime
+function workspacePath(filename: string): string {
+  const devPath = join(homedir(), ".openclaw-dev", "workspace", filename);
+  const prodPath = join(homedir(), ".openclaw", "workspace", filename);
   if (existsSync(devPath)) return devPath;
   return prodPath;
+}
+
+function workspaceAgentsMdPath(): string {
+  return workspacePath("AGENTS.md");
+}
+
+function workspaceSoulMdPath(): string {
+  return workspacePath("SOUL.md");
+}
+
+function workspaceIdentityMdPath(): string {
+  return workspacePath("IDENTITY.md");
 }
 
 /**
@@ -1066,6 +1076,108 @@ export const nkdCustomHandlers: GatewayRequestHandlers = {
       writeFileSync(wPath, content, "utf-8");
       console.log(`[nkd] ✓ Saved prompt to workspace AGENTS.md (${content.length} chars)`);
       respond(true, { success: true }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Workspace SOUL.md (read) ---
+  "nkd.workspace.soul": async ({ respond }) => {
+    try {
+      const p = workspaceSoulMdPath();
+      const content = existsSync(p) ? readFileSync(p, "utf-8") : "";
+      respond(true, { content }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Workspace SOUL.md (save) ---
+  "nkd.workspace.soulSave": async ({ params, respond }) => {
+    try {
+      const content = String((params as { content?: string }).content ?? "");
+      if (!content.trim()) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "content is required"));
+        return;
+      }
+      const wPath = workspaceSoulMdPath();
+      const wDir = join(wPath, "..");
+      if (!existsSync(wDir)) mkdirSync(wDir, { recursive: true });
+      writeFileSync(wPath, content, "utf-8");
+      // Also save to repo helpdesk-finviet/workspace/
+      const repoPath = join(process.cwd(), "helpdesk-finviet", "workspace", "SOUL.md");
+      const repoDir = join(repoPath, "..");
+      if (!existsSync(repoDir)) mkdirSync(repoDir, { recursive: true });
+      writeFileSync(repoPath, content, "utf-8");
+      console.log(`[nkd] ✓ Saved SOUL.md (${content.length} chars)`);
+      respond(true, { success: true }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Workspace IDENTITY.md (read) ---
+  "nkd.workspace.identity": async ({ respond }) => {
+    try {
+      const p = workspaceIdentityMdPath();
+      const content = existsSync(p) ? readFileSync(p, "utf-8") : "";
+      respond(true, { content }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Workspace IDENTITY.md (save) ---
+  "nkd.workspace.identitySave": async ({ params, respond }) => {
+    try {
+      const content = String((params as { content?: string }).content ?? "");
+      if (!content.trim()) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "content is required"));
+        return;
+      }
+      const wPath = workspaceIdentityMdPath();
+      const wDir = join(wPath, "..");
+      if (!existsSync(wDir)) mkdirSync(wDir, { recursive: true });
+      writeFileSync(wPath, content, "utf-8");
+      // Also save to repo helpdesk-finviet/workspace/
+      const repoPath = join(process.cwd(), "helpdesk-finviet", "workspace", "IDENTITY.md");
+      const repoDir = join(repoPath, "..");
+      if (!existsSync(repoDir)) mkdirSync(repoDir, { recursive: true });
+      writeFileSync(repoPath, content, "utf-8");
+      console.log(`[nkd] ✓ Saved IDENTITY.md (${content.length} chars)`);
+      respond(true, { success: true }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+
+  // --- Workspace: get current Zalo agent display name ---
+  "nkd.workspace.agentName": async ({ context, respond }) => {
+    try {
+      const snapshot = context.getRuntimeSnapshot();
+      // Try zalouser channel first (personal account)
+      const zalouserAccounts = snapshot.channelAccounts?.zalouser;
+      if (zalouserAccounts) {
+        for (const [, acct] of Object.entries(zalouserAccounts)) {
+          const profile = acct.profile as { displayName?: string; userId?: string } | undefined;
+          if (profile?.displayName) {
+            respond(true, { name: profile.displayName, source: "zalouser", userId: profile.userId ?? null }, undefined);
+            return;
+          }
+        }
+      }
+      // Fallback: try zalo bot channel
+      const zaloAccounts = snapshot.channelAccounts?.zalo;
+      if (zaloAccounts) {
+        for (const [id, acct] of Object.entries(zaloAccounts)) {
+          if (acct.name) {
+            respond(true, { name: acct.name, source: "zalo", accountId: id }, undefined);
+            return;
+          }
+        }
+      }
+      // Not found
+      respond(true, { name: null, source: null }, undefined);
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
