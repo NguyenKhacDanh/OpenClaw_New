@@ -78,7 +78,15 @@ Set-Location $RepoRoot
 
 # Backend build
 if (!(Test-Path "$RepoRoot\dist\entry.js")) {
-    Write-Host "  Building backend..." -ForegroundColor DarkGray
+    Write-Host "  Building backend (tsdown bundle)..." -ForegroundColor DarkGray
+    $ErrorActionPreference = "Continue"
+    node scripts/tsdown-build.mjs
+    if (!(Test-Path "$RepoRoot\dist\entry.js")) {
+        Write-Host "  tsdown-build.mjs did not produce entry.js, trying direct tsdown..." -ForegroundColor DarkYellow
+        pnpm exec tsdown --config-loader unrun --logLevel warn
+    }
+    $ErrorActionPreference = "Stop"
+    Write-Host "  Running runtime-postbuild..." -ForegroundColor DarkGray
     node scripts/runtime-postbuild.mjs
     node scripts/build-stamp.mjs
     if (!(Test-Path "$RepoRoot\dist\entry.js")) {
