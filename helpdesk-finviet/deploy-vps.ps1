@@ -37,7 +37,8 @@ foreach ($f in $wsFiles) {
     if (Test-Path $src) {
         Copy-Item $src "$WorkspaceDir\$f" -Force
         Write-Host "  -> $f copied" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  -> $f not found in repo, skipping" -ForegroundColor DarkYellow
     }
 }
@@ -48,13 +49,28 @@ Copy-Item "$HelpdeskDir\openclaw.json" "$OpenClawHome\openclaw.json" -Force
 Write-Host "  -> openclaw.json updated" -ForegroundColor Green
 
 # 5. Install dependencies (nếu chưa install)
+$ErrorActionPreference = "Continue"
 if (!(Test-Path "$RepoRoot\node_modules\.pnpm")) {
     Write-Host "[5/7] Installing dependencies (pnpm install)..." -ForegroundColor Yellow
     Set-Location $RepoRoot
-    pnpm install --frozen-lockfile
-} else {
+    pnpm install --no-frozen-lockfile
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Retry: pnpm install without lockfile..." -ForegroundColor DarkYellow
+        pnpm install --no-frozen-lockfile --no-optional
+    }
+}
+else {
     Write-Host "[5/7] Dependencies OK, skipping pnpm install" -ForegroundColor Green
 }
+
+# 5b. Install UI dependencies separately
+if (!(Test-Path "$RepoRoot\ui\node_modules")) {
+    Write-Host "[5b] Installing UI dependencies..." -ForegroundColor Yellow
+    Set-Location "$RepoRoot\ui"
+    pnpm install --no-frozen-lockfile
+    Set-Location $RepoRoot
+}
+$ErrorActionPreference = "Stop"
 
 # 6. Build
 Write-Host "[6/7] Building..." -ForegroundColor Yellow
@@ -65,21 +81,32 @@ if (!(Test-Path "$RepoRoot\dist\entry.js")) {
     Write-Host "  Building backend..." -ForegroundColor DarkGray
     node scripts/runtime-postbuild.mjs
     node scripts/build-stamp.mjs
-} else {
+    if (!(Test-Path "$RepoRoot\dist\entry.js")) {
+        Write-Host "  ERROR: dist/entry.js still missing after build!" -ForegroundColor Red
+        Write-Host "  Try manually: cd $RepoRoot; pnpm build" -ForegroundColor Yellow
+    }
+}
+else {
     Write-Host "  Backend dist exists, skipping" -ForegroundColor Green
 }
 
 # UI build (always rebuild to get latest NKD Custom changes)
 Write-Host "  Building UI..." -ForegroundColor DarkGray
 Set-Location "$RepoRoot\ui"
+$ErrorActionPreference = "Continue"
 pnpm build
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  UI build failed, trying npx vite build..." -ForegroundColor DarkYellow
+    npx vite build
+}
+$ErrorActionPreference = "Stop"
 Set-Location $RepoRoot
 Write-Host "  -> Build complete" -ForegroundColor Green
 
 # 7. Start gateway
 Write-Host "[7/7] Starting gateway..." -ForegroundColor Yellow
 Set-Location $RepoRoot
-Start-Process -FilePath "node" -ArgumentList "openclaw.mjs","gateway","run","--bind","lan","--port","$GatewayPort","--force" -NoNewWindow -RedirectStandardOutput "$RepoRoot\gw-stdout.log" -RedirectStandardError "$RepoRoot\gw-stderr.log"
+Start-Process -FilePath "node" -ArgumentList "openclaw.mjs", "gateway", "run", "--bind", "lan", "--port", "$GatewayPort", "--force" -NoNewWindow -RedirectStandardOutput "$RepoRoot\gw-stdout.log" -RedirectStandardError "$RepoRoot\gw-stderr.log"
 
 Write-Host ""
 Write-Host "Waiting 12s for startup..." -ForegroundColor Yellow
@@ -89,7 +116,8 @@ Start-Sleep -Seconds 12
 $listening = netstat -ano | Select-String "${GatewayPort}.*LISTENING"
 if ($listening) {
     Write-Host "=== GATEWAY OK - Port $GatewayPort LISTENING ===" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "=== WARNING: Gateway may not have started ===" -ForegroundColor Red
     Write-Host "Check: Get-Content $RepoRoot\gw-stderr.log -Tail 30" -ForegroundColor Yellow
 }
@@ -99,7 +127,8 @@ $zaloLog = Select-String -Path "$RepoRoot\gw-stdout.log" -Pattern "zalouser|star
 if ($zaloLog) {
     Write-Host "=== ZALOUSER OK ===" -ForegroundColor Green
     $zaloLog | Select-Object -First 5 | ForEach-Object { Write-Host "  $($_.Line)" -ForegroundColor Cyan }
-} else {
+}
+else {
     Write-Host "=== WARNING: Zalouser not found in log yet ===" -ForegroundColor DarkYellow
 }
 
