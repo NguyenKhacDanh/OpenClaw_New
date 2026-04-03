@@ -1,0 +1,55 @@
+# ============================================================
+# Dockerfile.helpdesk — Build OpenClaw Helpdesk FinViet on Ubuntu
+# ============================================================
+# Usage (from repo root):
+#   docker build -f helpdesk-finviet/Dockerfile.helpdesk -t openclaw-helpdesk .
+#   docker run -d --name helpdesk \
+#     -p 19001:19001 \
+#     -v openclaw-data:/root/.openclaw \
+#     openclaw-helpdesk
+# ============================================================
+
+FROM node:22-bookworm
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl ca-certificates python3 build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY ui/package.json ui/
+COPY patches/ patches/
+
+# Install deps
+RUN pnpm install --frozen-lockfile --ignore-scripts 2>/dev/null || pnpm install --no-frozen-lockfile
+
+# Copy source
+COPY . .
+
+# Build backend
+RUN node scripts/runtime-postbuild.mjs && node scripts/build-stamp.mjs
+
+# Build UI
+RUN cd ui && pnpm build
+
+# Copy helpdesk workspace files to default location
+RUN mkdir -p /root/.openclaw/workspace && \
+    cp -f helpdesk-finviet/workspace/IDENTITY.md /root/.openclaw/workspace/ && \
+    cp -f helpdesk-finviet/workspace/SOUL.md /root/.openclaw/workspace/ && \
+    cp -f helpdesk-finviet/workspace/AGENTS.md /root/.openclaw/workspace/ && \
+    cp -f helpdesk-finviet/openclaw.json /root/.openclaw/openclaw.json
+
+EXPOSE 19001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -sf http://localhost:19001/ || exit 1
+
+# Start gateway
+CMD ["node", "openclaw.mjs", "gateway", "run", "--bind", "0.0.0.0", "--port", "19001", "--force"]

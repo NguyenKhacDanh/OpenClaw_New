@@ -3,79 +3,111 @@
 # Chạy SAU KHI clone/pull code xong
 # Usage: powershell -File D:\OpenClaw_New\helpdesk-finviet\deploy-vps.ps1
 # ============================================================
+# Commit: 4e0da8c  (workspace editor + dynamic agent name)
+# ============================================================
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = "D:\OpenClaw_New"
 $HelpdeskDir = "$RepoRoot\helpdesk-finviet"
 $OpenClawHome = "C:\Users\Administrator\.openclaw"
 $WorkspaceDir = "$OpenClawHome\workspace"
+$GatewayPort = 19001
 
 Write-Host "=== Deploy Helpdesk FinViet ===" -ForegroundColor Cyan
+Write-Host "  Repo:  $RepoRoot" -ForegroundColor DarkGray
+Write-Host "  Home:  $OpenClawHome" -ForegroundColor DarkGray
 
 # 1. Kill gateway nếu đang chạy
-Write-Host "[1/6] Stopping gateway..." -ForegroundColor Yellow
+Write-Host "`n[1/7] Stopping gateway..." -ForegroundColor Yellow
 Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 3
 
 # 2. Clean locks + sessions
-Write-Host "[2/6] Cleaning locks & sessions..." -ForegroundColor Yellow
+Write-Host "[2/7] Cleaning locks & sessions..." -ForegroundColor Yellow
 Remove-Item "$env:TEMP\openclaw\gateway.*.lock" -Force -ErrorAction SilentlyContinue
 Remove-Item "$OpenClawHome\agents\main\sessions\*" -Force -Recurse -ErrorAction SilentlyContinue
 Remove-Item "$OpenClawHome\agents\main\agent\models.json" -Force -ErrorAction SilentlyContinue
 
-# 3. Copy workspace files
-Write-Host "[3/6] Copying workspace files..." -ForegroundColor Yellow
+# 3. Copy workspace files (IDENTITY.md, SOUL.md, AGENTS.md)
+Write-Host "[3/7] Copying workspace files..." -ForegroundColor Yellow
 if (!(Test-Path $WorkspaceDir)) { New-Item -ItemType Directory -Path $WorkspaceDir -Force | Out-Null }
-Copy-Item "$HelpdeskDir\workspace\IDENTITY.md" "$WorkspaceDir\IDENTITY.md" -Force
-Copy-Item "$HelpdeskDir\workspace\SOUL.md" "$WorkspaceDir\SOUL.md" -Force
-Copy-Item "$HelpdeskDir\workspace\AGENTS.md" "$WorkspaceDir\AGENTS.md" -Force
-Write-Host "  -> IDENTITY.md, SOUL.md, AGENTS.md copied" -ForegroundColor Green
+$wsFiles = @("IDENTITY.md", "SOUL.md", "AGENTS.md")
+foreach ($f in $wsFiles) {
+    $src = "$HelpdeskDir\workspace\$f"
+    if (Test-Path $src) {
+        Copy-Item $src "$WorkspaceDir\$f" -Force
+        Write-Host "  -> $f copied" -ForegroundColor Green
+    } else {
+        Write-Host "  -> $f not found in repo, skipping" -ForegroundColor DarkYellow
+    }
+}
 
-# 4. Copy openclaw.json (chỉ nếu chưa có hoặc muốn override)
-Write-Host "[4/6] Updating openclaw.json..." -ForegroundColor Yellow
+# 4. Copy openclaw.json
+Write-Host "[4/7] Updating openclaw.json..." -ForegroundColor Yellow
 Copy-Item "$HelpdeskDir\openclaw.json" "$OpenClawHome\openclaw.json" -Force
 Write-Host "  -> openclaw.json updated" -ForegroundColor Green
 
-# 5. Build (nếu dist chưa có)
-if (!(Test-Path "$RepoRoot\dist\entry.js")) {
-    Write-Host "[5/6] Building backend..." -ForegroundColor Yellow
+# 5. Install dependencies (nếu chưa install)
+if (!(Test-Path "$RepoRoot\node_modules\.pnpm")) {
+    Write-Host "[5/7] Installing dependencies (pnpm install)..." -ForegroundColor Yellow
     Set-Location $RepoRoot
+    pnpm install --frozen-lockfile
+} else {
+    Write-Host "[5/7] Dependencies OK, skipping pnpm install" -ForegroundColor Green
+}
+
+# 6. Build
+Write-Host "[6/7] Building..." -ForegroundColor Yellow
+Set-Location $RepoRoot
+
+# Backend build
+if (!(Test-Path "$RepoRoot\dist\entry.js")) {
+    Write-Host "  Building backend..." -ForegroundColor DarkGray
     node scripts/runtime-postbuild.mjs
     node scripts/build-stamp.mjs
-    
-    Write-Host "[5b/6] Building UI..." -ForegroundColor Yellow
-    Set-Location "$RepoRoot\ui"
-    pnpm build
-    Set-Location $RepoRoot
 } else {
-    Write-Host "[5/6] Build already exists, skipping..." -ForegroundColor Green
+    Write-Host "  Backend dist exists, skipping" -ForegroundColor Green
 }
 
-# 6. Start gateway
-Write-Host "[6/6] Starting gateway..." -ForegroundColor Yellow
+# UI build (always rebuild to get latest NKD Custom changes)
+Write-Host "  Building UI..." -ForegroundColor DarkGray
+Set-Location "$RepoRoot\ui"
+pnpm build
 Set-Location $RepoRoot
-Start-Process -FilePath "node" -ArgumentList "openclaw.mjs","gateway","run","--bind","lan","--port","19001","--force" -NoNewWindow -RedirectStandardOutput "$RepoRoot\gw-stdout.log" -RedirectStandardError "$RepoRoot\gw-stderr.log"
+Write-Host "  -> Build complete" -ForegroundColor Green
+
+# 7. Start gateway
+Write-Host "[7/7] Starting gateway..." -ForegroundColor Yellow
+Set-Location $RepoRoot
+Start-Process -FilePath "node" -ArgumentList "openclaw.mjs","gateway","run","--bind","lan","--port","$GatewayPort","--force" -NoNewWindow -RedirectStandardOutput "$RepoRoot\gw-stdout.log" -RedirectStandardError "$RepoRoot\gw-stderr.log"
 
 Write-Host ""
-Write-Host "Waiting 10s for startup..." -ForegroundColor Yellow
-Start-Sleep -Seconds 10
+Write-Host "Waiting 12s for startup..." -ForegroundColor Yellow
+Start-Sleep -Seconds 12
 
-# Verify
-$listening = netstat -ano | Select-String "19001.*LISTENING"
+# Verify gateway
+$listening = netstat -ano | Select-String "${GatewayPort}.*LISTENING"
 if ($listening) {
-    Write-Host "=== GATEWAY OK - Listening on port 19001 ===" -ForegroundColor Green
+    Write-Host "=== GATEWAY OK - Port $GatewayPort LISTENING ===" -ForegroundColor Green
 } else {
     Write-Host "=== WARNING: Gateway may not have started ===" -ForegroundColor Red
-    Write-Host "Check logs: Get-Content $RepoRoot\gw-stderr.log -Tail 20" -ForegroundColor Yellow
+    Write-Host "Check: Get-Content $RepoRoot\gw-stderr.log -Tail 30" -ForegroundColor Yellow
 }
 
-$zaloLog = Select-String -Path "$RepoRoot\gw-stdout.log" -Pattern "zalouser|Agent Cu" -ErrorAction SilentlyContinue
+# Verify zalouser
+$zaloLog = Select-String -Path "$RepoRoot\gw-stdout.log" -Pattern "zalouser|starting.*provider" -ErrorAction SilentlyContinue
 if ($zaloLog) {
     Write-Host "=== ZALOUSER OK ===" -ForegroundColor Green
-    $zaloLog | ForEach-Object { Write-Host "  $($_.Line)" -ForegroundColor Cyan }
+    $zaloLog | Select-Object -First 5 | ForEach-Object { Write-Host "  $($_.Line)" -ForegroundColor Cyan }
 } else {
-    Write-Host "=== WARNING: Zalouser not found in log ===" -ForegroundColor Red
+    Write-Host "=== WARNING: Zalouser not found in log yet ===" -ForegroundColor DarkYellow
 }
 
+# Print UI URL
+$ipAddr = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne "127.0.0.1" } | Select-Object -First 1).IPAddress
 Write-Host ""
-Write-Host "Done! Test bot on Zalo group." -ForegroundColor Green
+Write-Host "Done! Access UI at:" -ForegroundColor Green
+Write-Host "  http://${ipAddr}:${GatewayPort}" -ForegroundColor Cyan
+Write-Host "  Token: 80130a3a631f966a38d943e7ba21cebc2c2c6f46911b5a7b" -ForegroundColor DarkGray
+Write-Host ""
+Write-Host "Tabs: NKD Custom -> Workspace -> SOUL.md / IDENTITY.md" -ForegroundColor Green
