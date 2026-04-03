@@ -1,103 +1,120 @@
 {
-  "$schema": "https://docs.openclaw.ai/schema/config.json",
-
+  "meta": {
+    "lastTouchedVersion": "2026.3.27",
+    "lastTouchedAt": "2026-04-01T16:00:00.000Z"
+  },
   "agents": {
     "defaults": {
       "model": {
-        "primary": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        "primary": "openai/gpt-4.1-mini",
         "fallbacks": [
+          "nvidia/meta/llama-3.3-70b-instruct",
           "groq/llama-3.3-70b-versatile",
           "groq/llama-3.1-8b-instant",
           "nvidia/nvidia/llama-3.1-nemotron-70b-instruct"
         ]
       },
-      "systemPrompt": "",
-      "workspace": "./workspace",
-      "thinkingDefault": "off",
-      "blockStreamingDefault": "on",
-      "typingMode": "thinking",
-      "timeoutSeconds": 120,
-      "maxConcurrent": 3,
-      "humanDelay": {
-        "mode": "natural",
-        "minMs": 500,
-        "maxMs": 1500
-      },
-      "heartbeat": {
-        "every": "5m",
-        "activeHours": {
-          "start": "07:00",
-          "end": "23:00",
-          "timezone": "Asia/Ho_Chi_Minh"
-        },
-        "lightContext": true,
-        "isolatedSession": true,
-        "suppressToolErrorWarnings": true
-      },
-      "compaction": {
-        "mode": "safeguard",
-        "customInstructions": "Luôn giữ nguyên ngôn ngữ tiếng Việt khi tóm tắt. Bảo toàn mã ticket, tên phần mềm, mã lỗi."
-      }
-    },
-    "list": [
-      {
-        "id": "helpdesk-finviet",
-        "default": true,
-        "name": "AI Helpdesk FinViet",
-        "workspace": "./workspace",
-        "model": {
-          "primary": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
-          "fallbacks": [
-            "groq/llama-3.3-70b-versatile",
-            "groq/llama-3.1-8b-instant",
-            "nvidia/nvidia/llama-3.1-nemotron-70b-instruct"
-          ]
-        },
-        "identity": {
-          "name": "AI Helpdesk FinViet",
-          "prefix": "🤖"
-        },
-        "tools": {
-          "alsoAllow": ["knowledge_search", "ticket_create", "ticket_status"]
-        }
-      }
-    ]
-  },
-
-  "providers": {
-    "groq": {
-      "apiKey": "${GROQ_API_KEY}"
-    },
-    "github": {
-      "apiKey": "${GITHUB_TOKEN}"
+      "thinkingDefault": "off"
     }
   },
-
+  "tools": {
+    "profile": "minimal",
+    "alsoAllow": [
+      "web_search"
+    ],
+    "deny": [
+      "session_status",
+      "sessions_send",
+      "sessions_list"
+    ]
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
   "channels": {
-    "whatsapp": {
-      "enabled": true,
-      "dmPolicy": "open",
-      "allowFrom": ["*"],
-      "groupPolicy": "open"
-    },
     "zalouser": {
       "enabled": true,
       "dmPolicy": "open",
-      "allowFrom": ["*"],
-      "groupPolicy": "open"
+      "groupPolicy": "open",
+      "allowFrom": [
+        "*"
+      ]
+    },
+    "whatsapp": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": [
+        "*"
+      ],
+      "groupPolicy": "open",
+      "debounceMs": 0,
+      "mediaMaxMb": 50
     },
     "zalo": {
       "enabled": true,
       "dmPolicy": "open",
-      "allowFrom": ["*"],
-      "groupPolicy": "open"
+      "groupPolicy": "open",
+      "allowFrom": [
+        "*"
+      ]
     }
   },
-
+  "gateway": {
+    "mode": "local",
+    "controlUi": {
+      "dangerouslyAllowHostHeaderOriginFallback": true,
+      "dangerouslyDisableDeviceAuth": true
+    },
+    "auth": {
+      "mode": "token",
+      "token": "80130a3a631f966a38d943e7ba21cebc2c2c6f46911b5a7b"
+    },
+    "port": 19001,
+    "bind": "lan"
+  },
   "plugins": {
-    "whatsapp": { "enabled": true },
-    "zalouser": { "enabled": true },
-    "zalo": { "enabled": true },
-    "groq": { "enabled": true }
+    "enabled": true,
+    "allow": [
+      "zalouser",
+      "zalo",
+      "nvidia",
+      "groq",
+      "openai"
+    ],
+    "entries": {
+      "zalouser": {
+        "enabled": true,
+        "config": {}
+      },
+      "zalo": {
+        "enabled": true,
+        "config": {}
+      },
+      "nvidia": {
+        "enabled": true,
+        "config": {}
+      },
+      "groq": {
+        "enabled": true,
+        "config": {}
+      },
+      "openai": {
+        "enabled": true,
+        "config": {}
+      }
+    }
+  },
+  "session": {
+    "reset": {
+      "mode": "idle",
+      "idleMinutes": 5
+    },
+    "maintenance": {
+      "pruneAfter": "12h",
+      "maxEntries": 6
+    }
   }
 }
