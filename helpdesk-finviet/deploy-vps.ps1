@@ -6,7 +6,7 @@
 # Commit: fe390fc1  (pre-built dist/ in git)
 # ============================================================
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $RepoRoot = "D:\OpenClaw_New"
 $HelpdeskDir = "$RepoRoot\helpdesk-finviet"
 $OpenClawHome = "C:\Users\Administrator\.openclaw"
@@ -30,7 +30,10 @@ Remove-Item "$OpenClawHome\agents\main\agent\models.json" -Force -ErrorAction Si
 
 # 3. Copy workspace files (IDENTITY.md, SOUL.md, AGENTS.md)
 Write-Host "[3/5] Copying workspace files..." -ForegroundColor Yellow
-if (!(Test-Path $WorkspaceDir)) { New-Item -ItemType Directory -Path $WorkspaceDir -Force | Out-Null }
+if (!(Test-Path $WorkspaceDir)) {
+    try { New-Item -ItemType Directory -Path $WorkspaceDir -Force | Out-Null }
+    catch { Write-Host "  Note: Could not create $WorkspaceDir (may need admin). Trying mkdir..." -ForegroundColor DarkYellow; cmd /c "mkdir `"$WorkspaceDir`"" 2>$null }
+}
 $wsFiles = @("IDENTITY.md", "SOUL.md", "AGENTS.md")
 foreach ($f in $wsFiles) {
     $src = "$HelpdeskDir\workspace\$f"
