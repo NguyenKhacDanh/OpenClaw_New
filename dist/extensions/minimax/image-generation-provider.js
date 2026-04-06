@@ -1,2 +1,2 @@
-import { n as buildMinimaxPortalImageGenerationProvider, t as buildMinimaxImageGenerationProvider } from "../../image-generation-provider-BZ15obye.js";
+import { n as buildMinimaxPortalImageGenerationProvider, t as buildMinimaxImageGenerationProvider } from "../../image-generation-provider-E70cfZow.js";
 export { buildMinimaxImageGenerationProvider, buildMinimaxPortalImageGenerationProvider };

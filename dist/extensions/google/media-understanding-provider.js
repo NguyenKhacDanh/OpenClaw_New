@@ -1,7 +1,7 @@
 import { n as normalizeGoogleModelId } from "../../model-id-fXGzbdpZ.js";
 import { a as normalizeGoogleApiBaseUrl, c as parseGeminiAuth, t as DEFAULT_GOOGLE_API_BASE_URL } from "../../api-BnzTE5Fb.js";
 import { i as postJsonRequest, r as normalizeBaseUrl, t as assertOkOrThrowHttpError } from "../../shared-DpVD7Pb6.js";
-import { n as describeImageWithModel, r as describeImagesWithModel } from "../../media-understanding-BAKbduZi.js";
+import { n as describeImageWithModel, r as describeImagesWithModel } from "../../media-understanding-DQnLwXvb.js";
 import "../../provider-http-CgvZNQ7_.js";
 //#region extensions/google/media-understanding-provider.ts
 const DEFAULT_GOOGLE_AUDIO_BASE_URL = DEFAULT_GOOGLE_API_BASE_URL;

@@ -1,6 +1,6 @@
 import { n as redactSensitiveText } from "../redact-BDinS1q9.js";
 import { t as formatDocsLink } from "../links-BAVGKG23.js";
-import { CP as unregisterSessionBindingAdapter, Oj as formatLocationText, SP as registerSessionBindingAdapter, bP as getSessionBindingService, cE as runPluginCommandWithTimeout, kj as toLocationContext, oE as matrixSetupAdapter, pO as promptChannelAccessConfig, sE as matrixSetupWizard, uE as createMatrixThreadBindingManager, uO as resolveThreadBindingFarewellText } from "../auth-profiles-CbvzvUuD.js";
+import { CP as unregisterSessionBindingAdapter, Oj as formatLocationText, SP as registerSessionBindingAdapter, bP as getSessionBindingService, cE as runPluginCommandWithTimeout, kj as toLocationContext, oE as matrixSetupAdapter, pO as promptChannelAccessConfig, sE as matrixSetupWizard, uE as createMatrixThreadBindingManager, uO as resolveThreadBindingFarewellText } from "../auth-profiles-Bx_pc0K9.js";
 import { _ as normalizeAccountId, g as DEFAULT_ACCOUNT_ID, u as resolveAgentIdFromSessionKey, v as normalizeOptionalAccountId } from "../session-key-B-JhgBEk.js";
 import { r as normalizeStringEntries } from "../string-normalization-h7Ribyde.js";
 import { a as hasConfiguredSecretInput, c as normalizeResolvedSecretInputString, l as normalizeSecretInputString } from "../types.secrets-D6PgnNgv.js";

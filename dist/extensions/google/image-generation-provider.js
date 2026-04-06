@@ -1,4 +1,4 @@
-import { Go as resolveApiKeyForProvider } from "../../auth-profiles-CbvzvUuD.js";
+import { Go as resolveApiKeyForProvider } from "../../auth-profiles-Bx_pc0K9.js";
 import { n as normalizeGoogleModelId } from "../../model-id-fXGzbdpZ.js";
 import { a as normalizeGoogleApiBaseUrl, c as parseGeminiAuth, t as DEFAULT_GOOGLE_API_BASE_URL } from "../../api-BnzTE5Fb.js";
 import { i as postJsonRequest, r as normalizeBaseUrl, t as assertOkOrThrowHttpError } from "../../shared-DpVD7Pb6.js";

@@ -1,7 +1,7 @@
 import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
 import { t as createProviderApiKeyAuthMethod } from "../../provider-api-key-auth-BoS1qscc.js";
 import "../../provider-auth-api-key-CH3smFK-.js";
-import { n as buildFalImageGenerationProvider } from "../../image-generation-provider-CLLRPmcs.js";
+import { n as buildFalImageGenerationProvider } from "../../image-generation-provider-B-Z-H3L7.js";
 import { n as applyFalConfig, t as FAL_DEFAULT_IMAGE_MODEL_REF } from "../../onboard-Dlu_BTcu.js";
 //#region extensions/fal/index.ts
 const PROVIDER_ID = "fal";

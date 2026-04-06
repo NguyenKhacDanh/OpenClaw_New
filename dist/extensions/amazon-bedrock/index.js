@@ -1,6 +1,6 @@
 import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
-import { a as resolveImplicitBedrockProvider, i as resolveBedrockConfigApiKey, n as mergeImplicitBedrockProvider } from "../../discovery-BSPo20Ex.js";
-import "../../api-PNr3Sjgc.js";
+import { a as resolveImplicitBedrockProvider, i as resolveBedrockConfigApiKey, n as mergeImplicitBedrockProvider } from "../../discovery-CPjARKJI.js";
+import "../../api-Ce6iEWhc.js";
 import { b as createBedrockNoCacheWrapper, x as isAnthropicBedrockModel } from "../../provider-stream-BL5JCQR1.js";
 //#region extensions/amazon-bedrock/index.ts
 const PROVIDER_ID = "amazon-bedrock";

@@ -1,4 +1,4 @@
-import { Cx as sendPollTelegram, Jb as handleTelegramAction, Kb as telegramMessageActionRuntime, PS as resolveTelegramFetch, Sx as sendMessageTelegram, ZS as resolveTelegramAccount, nt as telegramPlugin, px as telegramOutbound, qS as listTelegramAccountIds, rt as setTelegramRuntime } from "../../auth-profiles-CbvzvUuD.js";
+import { Cx as sendPollTelegram, Jb as handleTelegramAction, Kb as telegramMessageActionRuntime, PS as resolveTelegramFetch, Sx as sendMessageTelegram, ZS as resolveTelegramAccount, nt as telegramPlugin, px as telegramOutbound, qS as listTelegramAccountIds, rt as setTelegramRuntime } from "../../auth-profiles-Bx_pc0K9.js";
 import { r as makeProxyFetch } from "../../proxy-fetch-U40GQN7v.js";
 import { n as vi } from "../../test.p_J6dB8a-Ib-_UasW.js";
 //#region extensions/telegram/src/bot-message-context.test-harness.ts
@@ -11,7 +11,7 @@ const baseTelegramMessageContextConfig = {
 	messages: { groupChat: { mentionPatterns: [] } }
 };
 async function buildTelegramMessageContextForTest(params) {
-	const { buildTelegramMessageContext } = await import("../../bot-message-context-BwCpjIge.js");
+	const { buildTelegramMessageContext } = await import("../../bot-message-context-CFTXx1Kn.js");
 	return await buildTelegramMessageContext({
 		primaryCtx: {
 			message: {

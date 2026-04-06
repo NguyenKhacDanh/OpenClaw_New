@@ -1,5 +1,5 @@
 import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
-import { t as buildElevenLabsSpeechProvider } from "../../speech-provider-CFOK72AQ.js";
+import { t as buildElevenLabsSpeechProvider } from "../../speech-provider-CbtMs1mC.js";
 //#region extensions/elevenlabs/index.ts
 var elevenlabs_default = definePluginEntry({
 	id: "elevenlabs",

@@ -4,7 +4,7 @@ import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
 import { n as listProfilesForProvider } from "../../profiles-v816nime.js";
 import "../../provider-auth-DKqU4ksq.js";
 import { r as resolveCopilotApiToken, t as DEFAULT_COPILOT_API_BASE_URL } from "../../github-copilot-token-CGlrEwjy.js";
-import { t as githubCopilotLoginCommand } from "../../provider-auth-login-DmaBvKQa.js";
+import { t as githubCopilotLoginCommand } from "../../provider-auth-login-w_Yc0_JH.js";
 import { n as resolveCopilotForwardCompatModel, t as PROVIDER_ID } from "../../models-BsxaiUM9.js";
 import "../../token-CMKpuJtw.js";
 import { t as fetchCopilotUsage } from "../../usage-2DKul6SN.js";

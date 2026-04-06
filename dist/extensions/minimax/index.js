@@ -11,8 +11,8 @@ import { o as isMiniMaxModernModelId, t as MINIMAX_DEFAULT_MODEL_ID } from "../.
 import { n as buildMinimaxProvider, t as buildMinimaxPortalProvider } from "../../provider-catalog-CH4TO3gX.js";
 import "../../api-BWCXRija2.js";
 import "../../provider-usage-BWxfaCPc.js";
-import { n as buildMinimaxPortalImageGenerationProvider, t as buildMinimaxImageGenerationProvider } from "../../image-generation-provider-BZ15obye.js";
-import { n as minimaxPortalMediaUnderstandingProvider, t as minimaxMediaUnderstandingProvider } from "../../media-understanding-provider-BMoX8PxG.js";
+import { n as buildMinimaxPortalImageGenerationProvider, t as buildMinimaxImageGenerationProvider } from "../../image-generation-provider-E70cfZow.js";
+import { n as minimaxPortalMediaUnderstandingProvider, t as minimaxMediaUnderstandingProvider } from "../../media-understanding-provider-Ce1KbyfZ.js";
 import { n as applyMinimaxApiConfigCn, t as applyMinimaxApiConfig } from "../../onboard-ynsJoYA0.js";
 //#region extensions/minimax/index.ts
 const API_PROVIDER_ID = "minimax";

@@ -16,7 +16,7 @@ import "../../cli-runtime-W72eFMDQ.js";
 import "../../provider-usage-BWxfaCPc.js";
 import { t as buildAnthropicCliBackend } from "../../cli-backend-DF4ivZ3L.js";
 import { n as hasClaudeCliAuth, t as buildAnthropicCliMigrationResult } from "../../cli-migration-DS33-Oiz.js";
-import { t as anthropicMediaUnderstandingProvider } from "../../media-understanding-provider-By9R42B0.js";
+import { t as anthropicMediaUnderstandingProvider } from "../../media-understanding-provider-DwGLiseB.js";
 //#region extensions/anthropic/index.ts
 const PROVIDER_ID = "anthropic";
 const DEFAULT_ANTHROPIC_MODEL = "anthropic/claude-sonnet-4-6";

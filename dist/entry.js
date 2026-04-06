@@ -197,14 +197,14 @@ function tryHandleRootHelpFastPath(argv, deps = {}) {
 		}
 		return true;
 	}
-	import("./root-help-BWtrioFf.js").then(({ outputRootHelp }) => {
+	import("./root-help-VZyi1zUC.js").then(({ outputRootHelp }) => {
 		outputRootHelp();
 	}).catch(handleError);
 	return true;
 }
 function runMainOrRootHelp(argv) {
 	if (tryHandleRootHelpFastPath(argv)) return;
-	import("./run-main-BAs-aa0r.js").then(({ runCli }) => runCli(argv)).catch((error) => {
+	import("./run-main-Djs9nnNV.js").then(({ runCli }) => runCli(argv)).catch((error) => {
 		console.error("[openclaw] Failed to start CLI:", error instanceof Error ? error.stack ?? error.message : error);
 		process$1.exitCode = 1;
 	});

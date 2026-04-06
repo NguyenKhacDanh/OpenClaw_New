@@ -1,5 +1,5 @@
 import { t as formatDocsLink } from "../links-BAVGKG23.js";
-import { Jt as ircSetupAdapter, Qt as resolveIrcAccount, Xt as listIrcAccountIds, Zt as resolveDefaultIrcAccountId, qj as dispatchInboundReplyWithBase, qt as ircSetupWizard } from "../auth-profiles-CbvzvUuD.js";
+import { Jt as ircSetupAdapter, Qt as resolveIrcAccount, Xt as listIrcAccountIds, Zt as resolveDefaultIrcAccountId, qj as dispatchInboundReplyWithBase, qt as ircSetupWizard } from "../auth-profiles-Bx_pc0K9.js";
 import { g as DEFAULT_ACCOUNT_ID } from "../session-key-B-JhgBEk.js";
 import { c as normalizeResolvedSecretInputString } from "../types.secrets-D6PgnNgv.js";
 import { t as getChatChannelMeta } from "../chat-meta-C7pBClla.js";

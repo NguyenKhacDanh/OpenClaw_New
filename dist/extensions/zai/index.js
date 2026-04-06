@@ -10,7 +10,7 @@ import { p as resolveLegacyPiAgentAccessToken, t as fetchZaiUsage } from "../../
 import "../../provider-usage-BWxfaCPc.js";
 import { n as applyZaiConfig, r as applyZaiProviderConfig, t as ZAI_DEFAULT_MODEL_REF } from "../../onboard-7ap3VgM-.js";
 import { t as detectZaiEndpoint } from "../../detect-BgBcQ_xS.js";
-import { t as zaiMediaUnderstandingProvider } from "../../media-understanding-provider-DAlk5j4L.js";
+import { t as zaiMediaUnderstandingProvider } from "../../media-understanding-provider-DKMQeKpn.js";
 //#region extensions/zai/index.ts
 const PROVIDER_ID = "zai";
 const GLM5_MODEL_ID = "glm-5";

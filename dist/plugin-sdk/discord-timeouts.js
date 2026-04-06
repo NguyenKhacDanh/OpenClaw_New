@@ -1,3 +1,3 @@
-import "../auth-profiles-CbvzvUuD.js";
+import "../auth-profiles-Bx_pc0K9.js";
 import { n as DISCORD_DEFAULT_LISTENER_TIMEOUT_MS, t as DISCORD_DEFAULT_INBOUND_WORKER_TIMEOUT_MS } from "../timeouts-C7FeM-rI.js";
 export { DISCORD_DEFAULT_INBOUND_WORKER_TIMEOUT_MS, DISCORD_DEFAULT_LISTENER_TIMEOUT_MS };

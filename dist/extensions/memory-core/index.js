@@ -1,6 +1,6 @@
 import { t as formatDocsLink } from "../../links-BAVGKG23.js";
 import { r as theme } from "../../theme-D-TumEpz.js";
-import { Gy as formatHelpExamples, R as parseNonNegativeByteSize, yL as resolveCronStyleNow } from "../../auth-profiles-CbvzvUuD.js";
+import { Gy as formatHelpExamples, R as parseNonNegativeByteSize, yL as resolveCronStyleNow } from "../../auth-profiles-Bx_pc0K9.js";
 import { T as parseAgentSessionKey } from "../../session-key-B-JhgBEk.js";
 import { v as resolveSessionAgentId } from "../../agent-scope-Cb7ofJgr.js";
 import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
@@ -8,16 +8,16 @@ import { c as jsonResult, d as readNumberParam, h as readStringParam } from "../
 import { g as SILENT_REPLY_TOKEN } from "../../system-events-Bwik0M7d.js";
 import { t as resolveMemorySearchConfig } from "../../memory-search-BRuaXbHY.js";
 import { t as resolveMemoryBackendConfig } from "../../backend-config-DbASjwrv.js";
-import { a as registerBuiltInMemoryEmbeddingProviders } from "../../manager-TUV62iLp.js";
-import { n as getMemorySearchManager, t as closeAllMemorySearchManagers } from "../../memory-DTIFF-yS.js";
-import "../../memory-core-host-runtime-core-EMK9C0aQ.js";
-import "../../memory-core-host-runtime-cli-DHGSYHt6.js";
+import { a as registerBuiltInMemoryEmbeddingProviders } from "../../manager-D43XVG-T.js";
+import { n as getMemorySearchManager, t as closeAllMemorySearchManagers } from "../../memory-GzaTJs5L.js";
+import "../../memory-core-host-runtime-core-B7dGz-YZ.js";
+import "../../memory-core-host-runtime-cli-CuKSOcuT.js";
 import "../../memory-core-host-runtime-files-CZTBsLtP.js";
 import { Type } from "@sinclair/typebox";
 //#region extensions/memory-core/src/cli.ts
 let memoryCliRuntimePromise = null;
 async function loadMemoryCliRuntime() {
-	memoryCliRuntimePromise ??= import("../../cli.runtime-Bqp-a3Ah.js");
+	memoryCliRuntimePromise ??= import("../../cli.runtime-Bvs8LZTq.js");
 	return await memoryCliRuntimePromise;
 }
 async function runMemoryStatus(opts) {
@@ -229,7 +229,7 @@ function deriveChatTypeFromSessionKey(sessionKey) {
 //#region extensions/memory-core/src/tools.shared.ts
 let memoryToolRuntimePromise = null;
 async function loadMemoryToolRuntime() {
-	memoryToolRuntimePromise ??= import("../../tools.runtime-DEtV2wYb.js");
+	memoryToolRuntimePromise ??= import("../../tools.runtime-GSWFO9QY.js");
 	return await memoryToolRuntimePromise;
 }
 const MemorySearchSchema = Type.Object({

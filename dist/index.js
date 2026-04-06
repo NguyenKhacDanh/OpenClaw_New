@@ -28,7 +28,7 @@ let saveSessionStore;
 let toWhatsappJid;
 let waitForever;
 async function loadLegacyCliDeps() {
-	const [{ installGaxiosFetchCompat }, { runCli }] = await Promise.all([import("./gaxios-fetch-compat-5gTvQQcz.js"), import("./run-main-BAs-aa0r.js")]);
+	const [{ installGaxiosFetchCompat }, { runCli }] = await Promise.all([import("./gaxios-fetch-compat-5gTvQQcz.js"), import("./run-main-Djs9nnNV.js")]);
 	return {
 		installGaxiosFetchCompat,
 		runCli
@@ -40,7 +40,7 @@ async function runLegacyCliEntry(argv = process.argv, deps) {
 	await runCli(argv);
 }
 const isMain = isMainModule({ currentFile: fileURLToPath(import.meta.url) });
-if (!isMain) ({assertWebChannel, applyTemplate, createDefaultDeps, deriveSessionKey, describePortOwner, ensureBinary, ensurePortAvailable, getReplyFromConfig, handlePortError, loadConfig, loadSessionStore, monitorWebChannel, normalizeE164, PortInUseError, promptYesNo, resolveSessionKey, resolveStorePath, runCommandWithTimeout, runExec, saveSessionStore, toWhatsappJid, waitForever} = await import("./library-ws0Qpfaz.js"));
+if (!isMain) ({assertWebChannel, applyTemplate, createDefaultDeps, deriveSessionKey, describePortOwner, ensureBinary, ensurePortAvailable, getReplyFromConfig, handlePortError, loadConfig, loadSessionStore, monitorWebChannel, normalizeE164, PortInUseError, promptYesNo, resolveSessionKey, resolveStorePath, runCommandWithTimeout, runExec, saveSessionStore, toWhatsappJid, waitForever} = await import("./library-BXnBqXVR.js"));
 if (isMain) {
 	installUnhandledRejectionHandler();
 	process.on("uncaughtException", (error) => {

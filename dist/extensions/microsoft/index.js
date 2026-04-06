@@ -1,5 +1,5 @@
 import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
-import { t as buildMicrosoftSpeechProvider } from "../../speech-provider-BSLObYOM.js";
+import { t as buildMicrosoftSpeechProvider } from "../../speech-provider-B1IPOadM.js";
 //#region extensions/microsoft/index.ts
 var microsoft_default = definePluginEntry({
 	id: "microsoft",

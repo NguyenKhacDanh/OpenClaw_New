@@ -5,14 +5,14 @@ import { n as normalizeHyphenSlug, t as normalizeAtHashSlug } from "../string-no
 import { o as isSecretRef } from "../types.secrets-D6PgnNgv.js";
 import { t as getChatChannelMeta } from "../chat-meta-C7pBClla.js";
 import { n as formatPairingApproveHint, r as parseOptionalDelimitedEntries } from "../helpers-Di_fPjeK.js";
-import { a as defineSetupPluginEntry, c as resolveTailnetHostWithRunner, d as loadSecretFileSync, f as readSecretFileSync, i as defineChannelPluginEntry, l as resolveGatewayBindUrl, n as createChannelPluginBase, o as stripChannelTargetPrefix, p as tryReadSecretFileSync, r as createChatChannelPlugin, s as stripTargetKindPrefix, t as buildChannelOutboundSessionRoute, u as DEFAULT_SECRET_FILE_MAX_BYTES } from "../core-B0vcREeb.js";
+import { a as defineSetupPluginEntry, c as resolveTailnetHostWithRunner, d as loadSecretFileSync, f as readSecretFileSync, i as defineChannelPluginEntry, l as resolveGatewayBindUrl, n as createChannelPluginBase, o as stripChannelTargetPrefix, p as tryReadSecretFileSync, r as createChatChannelPlugin, s as stripTargetKindPrefix, t as buildChannelOutboundSessionRoute, u as DEFAULT_SECRET_FILE_MAX_BYTES } from "../core-D9rS5gM5.js";
 import { n as buildAgentSessionKey } from "../base-session-key-NgoBW9Up.js";
 import { n as emptyPluginConfigSchema, t as buildPluginConfigSchema } from "../config-schema-C0ilgO2k.js";
 import { t as definePluginEntry } from "../plugin-entry-CM37bofc.js";
 import { n as enqueueKeyedTask, t as KeyedAsyncQueue } from "../keyed-async-queue-CgeLqp39.js";
 import { n as resolveGlobalDedupeCache, t as createDedupeCache } from "../dedupe-Bx1Et175.js";
 import { n as generateSecureUuid, t as generateSecureToken } from "../secure-random--MYcuPnr.js";
-import { t as delegateCompactionToRuntime } from "../delegate-CzV8606k.js";
+import { t as delegateCompactionToRuntime } from "../delegate-BT4id8vT.js";
 import { r as buildChannelConfigSchema } from "../config-schema-CRyTg0IK.js";
 import { s as migrateBaseNameToDefaultAccount, t as applyAccountNameToChannelSection } from "../setup-helpers-BCTVwbQ6.js";
 import { n as deleteAccountFromConfigSection, r as setAccountEnabledInConfigSection, t as clearAccountEntryFields } from "../config-helpers-DxNRjJ2L.js";

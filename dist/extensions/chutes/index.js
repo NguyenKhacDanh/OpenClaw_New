@@ -6,7 +6,7 @@ import "../../provider-auth-DKqU4ksq.js";
 import { t as buildOauthProviderAuthResult } from "../../provider-auth-result-BZFn4pgL.js";
 import { r as CHUTES_DEFAULT_MODEL_REF } from "../../models-Bw3o-WeO.js";
 import { i as buildChutesProvider, r as applyChutesProviderConfig, t as applyChutesApiKeyConfig } from "../../api-D3Gj0WV5.js";
-import { n as loginChutes } from "../../provider-auth-login-DmaBvKQa.js";
+import { n as loginChutes } from "../../provider-auth-login-w_Yc0_JH.js";
 //#region extensions/chutes/index.ts
 const PROVIDER_ID = "chutes";
 async function runChutesOAuth(ctx) {

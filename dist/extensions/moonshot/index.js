@@ -4,7 +4,7 @@ import { n as applyMoonshotConfig, r as applyMoonshotConfigCn, t as MOONSHOT_DEF
 import "../../api-THX_lxUO.js";
 import { t as defineSingleProviderPluginEntry } from "../../provider-entry-zE0c1QWv.js";
 import "../../provider-moonshot-Bj0_8iOp.js";
-import { r as moonshotMediaUnderstandingProvider } from "../../media-understanding-provider-nUeLZdfP.js";
+import { r as moonshotMediaUnderstandingProvider } from "../../media-understanding-provider-DwjBq_r-.js";
 import { n as createKimiWebSearchProvider } from "../../kimi-web-search-provider-mljYSavq.js";
 var moonshot_default = defineSingleProviderPluginEntry({
 	id: "moonshot",

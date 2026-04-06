@@ -1,4 +1,4 @@
-import { $F as resolveTextChunkLimit, BI as resolveMarkdownTableMode, CN as createScopedChannelMediaMaxBytesResolver, RC as markdownToSignalTextChunks, lC as sendMessageSignal } from "../../auth-profiles-CbvzvUuD.js";
+import { $F as resolveTextChunkLimit, BI as resolveMarkdownTableMode, CN as createScopedChannelMediaMaxBytesResolver, RC as markdownToSignalTextChunks, lC as sendMessageSignal } from "../../auth-profiles-Bx_pc0K9.js";
 import { r as resolveOutboundSendDep } from "../../outbound-runtime--HFn5s1Z.js";
 import { i as createAttachedChannelResultAdapter, n as attachChannelToResults, t as attachChannelToResult } from "../../channel-send-result-DEp-Z70H.js";
 //#region extensions/signal/src/outbound-adapter.ts

@@ -1,4 +1,4 @@
-import { BL as resolveActiveTalkProviderConfig } from "../../auth-profiles-CbvzvUuD.js";
+import { BL as resolveActiveTalkProviderConfig } from "../../auth-profiles-Bx_pc0K9.js";
 import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
 //#region extensions/talk-voice/index.ts
 function mask(s, keep = 6) {

@@ -1,6 +1,6 @@
 import { p as normalizeE164 } from "../../utils-ChfYK_zu.js";
 import { t as formatDocsLink } from "../../links-BAVGKG23.js";
-import { BC as listSignalAccountIds, CC as signalMessageActions, EC as sendReactionSignal, HC as resolveSignalAccount, TC as removeReactionSignal, VC as resolveDefaultSignalAccountId, XF as chunkText, cC as monitorSignalProvider, fC as looksLikeSignalTargetId, lC as sendMessageSignal, oC as probeSignal, pC as normalizeSignalMessagingTarget, wC as resolveSignalReactionLevel, zC as listEnabledSignalAccounts } from "../../auth-profiles-CbvzvUuD.js";
+import { BC as listSignalAccountIds, CC as signalMessageActions, EC as sendReactionSignal, HC as resolveSignalAccount, TC as removeReactionSignal, VC as resolveDefaultSignalAccountId, XF as chunkText, cC as monitorSignalProvider, fC as looksLikeSignalTargetId, lC as sendMessageSignal, oC as probeSignal, pC as normalizeSignalMessagingTarget, wC as resolveSignalReactionLevel, zC as listEnabledSignalAccounts } from "../../auth-profiles-Bx_pc0K9.js";
 import { _ as normalizeAccountId, g as DEFAULT_ACCOUNT_ID } from "../../session-key-B-JhgBEk.js";
 import { s as SignalConfigSchema } from "../../zod-schema.providers-core-BdjnVISd.js";
 import { t as getChatChannelMeta } from "../../chat-meta-C7pBClla.js";

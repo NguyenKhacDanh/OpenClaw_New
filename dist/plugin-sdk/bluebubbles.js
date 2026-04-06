@@ -1,5 +1,5 @@
 import { t as formatDocsLink } from "../links-BAVGKG23.js";
-import { Di as parseChatTargetPrefixesOrThrow, Ei as parseChatAllowTargetPrefixes, Jr as normalizeBlueBubblesAcpConversationId, Oi as resolveServicePrefixedAllowTarget, PF as stripMarkdown, Xr as collectBlueBubblesStatusIssues, Yr as resolveBlueBubblesConversationIdFromTarget, ai as isAllowedBlueBubblesSender, ci as BLUEBUBBLES_ACTIONS, ji as resolveServicePrefixedTarget, li as BLUEBUBBLES_ACTION_NAMES, qr as matchBlueBubblesAcpConversation } from "../auth-profiles-CbvzvUuD.js";
+import { Di as parseChatTargetPrefixesOrThrow, Ei as parseChatAllowTargetPrefixes, Jr as normalizeBlueBubblesAcpConversationId, Oi as resolveServicePrefixedAllowTarget, PF as stripMarkdown, Xr as collectBlueBubblesStatusIssues, Yr as resolveBlueBubblesConversationIdFromTarget, ai as isAllowedBlueBubblesSender, ci as BLUEBUBBLES_ACTIONS, ji as resolveServicePrefixedTarget, li as BLUEBUBBLES_ACTION_NAMES, qr as matchBlueBubblesAcpConversation } from "../auth-profiles-Bx_pc0K9.js";
 import { _ as normalizeAccountId, g as DEFAULT_ACCOUNT_ID } from "../session-key-B-JhgBEk.js";
 import { n as formatPairingApproveHint } from "../helpers-Di_fPjeK.js";
 import { n as emptyPluginConfigSchema } from "../config-schema-C0ilgO2k.js";

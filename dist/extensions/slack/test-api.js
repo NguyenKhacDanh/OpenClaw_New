@@ -1,4 +1,4 @@
-import { Ga as sendMessageSlack, ea as prepareSlackMessage, gt as createSlackActions, ht as slackOutbound, mt as setSlackRuntime, na as createSlackMonitorContext, pt as slackPlugin } from "../../auth-profiles-CbvzvUuD.js";
+import { Ga as sendMessageSlack, ea as prepareSlackMessage, gt as createSlackActions, ht as slackOutbound, mt as setSlackRuntime, na as createSlackMonitorContext, pt as slackPlugin } from "../../auth-profiles-Bx_pc0K9.js";
 //#region extensions/slack/src/monitor/message-handler/prepare.test-helpers.ts
 function createInboundSlackTestContext(params) {
 	return createSlackMonitorContext({

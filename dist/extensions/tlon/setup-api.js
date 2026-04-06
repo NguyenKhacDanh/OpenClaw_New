@@ -1,3 +1,3 @@
-import { a as tlonSetupAdapter } from "../../setup-core-CgHJ2pe_.js";
-import { t as tlonSetupWizard } from "../../setup-surface-CX-insEQ.js";
+import { a as tlonSetupAdapter } from "../../setup-core-BGgWpsDb.js";
+import { t as tlonSetupWizard } from "../../setup-surface-tx05rR4f.js";
 export { tlonSetupAdapter, tlonSetupWizard };

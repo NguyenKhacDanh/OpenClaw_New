@@ -1,5 +1,5 @@
 import { i as getChildLogger } from "../../logger-BCzP_yik.js";
-import { CI as resolveThreadFlag, SI as resolveSessionResetType, TM as resolveIndicatorType, bI as resolveChannelResetConfig, bM as resolveHeartbeatVisibility, f as loadConfig, fd as getReplyFromConfig, gc as resolveSessionKey, hL as DEFAULT_WEB_MEDIA_BYTES, hN as updateSessionStore, kd as resolveHeartbeatReplyPayload, lL as resolveWhatsAppHeartbeatRecipients, lN as loadSessionStore, vL as appendCronStyleCurrentTimeLine, xI as resolveSessionResetPolicy, xM as emitHeartbeatEvent, yI as evaluateSessionFreshness } from "../../auth-profiles-CbvzvUuD.js";
+import { CI as resolveThreadFlag, SI as resolveSessionResetType, TM as resolveIndicatorType, bI as resolveChannelResetConfig, bM as resolveHeartbeatVisibility, f as loadConfig, fd as getReplyFromConfig, gc as resolveSessionKey, hL as DEFAULT_WEB_MEDIA_BYTES, hN as updateSessionStore, kd as resolveHeartbeatReplyPayload, lL as resolveWhatsAppHeartbeatRecipients, lN as loadSessionStore, vL as appendCronStyleCurrentTimeLine, xI as resolveSessionResetPolicy, xM as emitHeartbeatEvent, yI as evaluateSessionFreshness } from "../../auth-profiles-Bx_pc0K9.js";
 import { l as normalizeMainKey } from "../../session-key-B-JhgBEk.js";
 import "../../routing-Bu83wHhI.js";
 import { d as resolveWebCredsBackupPath, f as resolveWebCredsPath, u as hasWebCredsSync } from "../../accounts-DtvLHbCP.js";
@@ -10,15 +10,15 @@ import { s as redactIdentifier } from "../../account-summary-GdhmAYfp.js";
 import { i as LocalMediaAccessError, n as loadWebMediaRaw, o as getDefaultLocalRoots, r as optimizeImageToJpeg, t as loadWebMedia } from "../../web-media-BgsN6JmW.js";
 import { p as resolveSendableOutboundReplyParts, s as hasOutboundReplyContent } from "../../reply-payload-DjEdxZBw.js";
 import "../../runtime-env-Cl5OP7LB.js";
-import { t as createWhatsAppLoginTool } from "../../agent-tools-login-Dl7BSDOI.js";
-import { a as maybeRestoreCredsFromBackup, c as readWebSelfId, d as webAuthExists, i as logoutWeb, l as readWebSelfIdentity, n as getWebAuthAgeMs, o as pickWebChannel, r as logWebSelfId, s as readCredsJsonRaw, t as WA_WEB_AUTH_DIR, u as resolveDefaultWebAuthDir } from "../../auth-store-C0IXZdwT.js";
-import { n as whatsAppActionRuntime, t as handleWhatsAppAction } from "../../action-runtime-BCJZcIDI.js";
+import { t as createWhatsAppLoginTool } from "../../agent-tools-login-CejOFalC.js";
+import { a as maybeRestoreCredsFromBackup, c as readWebSelfId, d as webAuthExists, i as logoutWeb, l as readWebSelfIdentity, n as getWebAuthAgeMs, o as pickWebChannel, r as logWebSelfId, s as readCredsJsonRaw, t as WA_WEB_AUTH_DIR, u as resolveDefaultWebAuthDir } from "../../auth-store-U3gXL9vv.js";
+import { n as whatsAppActionRuntime, t as handleWhatsAppAction } from "../../action-runtime-6mfTlXp5.js";
 import { i as setActiveWebListener, n as requireActiveWebListener, r as resolveWebAccountId, t as getActiveWebListener } from "../../active-listener-1qvLPfyD.js";
-import { n as sendPollWhatsApp, r as sendReactionWhatsApp, t as sendMessageWhatsApp } from "../../send-DlhJieAo.js";
+import { n as sendPollWhatsApp, r as sendReactionWhatsApp, t as sendMessageWhatsApp } from "../../send-DeE1xU9i.js";
 import { n as getStatusCode, t as formatError } from "../../session-errors-CR9f_522.js";
-import { o as whatsappHeartbeatLog, u as newConnectionId$1 } from "../../deliver-reply-Do7ysII3.js";
-import { a as waitForWaConnection, i as waitForCredsSaveQueueWithTimeout, n as newConnectionId, r as waitForCredsSaveQueue, t as createWaSocket } from "../../session-Dlz5pGi4.js";
-import { a as extractMediaPlaceholder, i as extractLocationData, n as monitorWebChannel, o as extractText, r as monitorWebInbox, s as resetWebInboundDedupe, t as loginWeb } from "../../login-C1ZireIh.js";
+import { o as whatsappHeartbeatLog, u as newConnectionId$1 } from "../../deliver-reply-BorIXUYp.js";
+import { a as waitForWaConnection, i as waitForCredsSaveQueueWithTimeout, n as newConnectionId, r as waitForCredsSaveQueue, t as createWaSocket } from "../../session-DyuOev0u.js";
+import { a as extractMediaPlaceholder, i as extractLocationData, n as monitorWebChannel, o as extractText, r as monitorWebInbox, s as resetWebInboundDedupe, t as loginWeb } from "../../login-DaKTfDNg.js";
 //#region extensions/whatsapp/src/auto-reply/session-snapshot.ts
 function getSessionSnapshot(cfg, from, _isHeartbeat = false, ctx) {
 	const sessionCfg = cfg.session;
@@ -293,7 +293,7 @@ function resolveHeartbeatRecipients(cfg, opts = {}) {
 //#region extensions/whatsapp/runtime-api.ts
 let loginQrModulePromise = null;
 function loadLoginQrModule() {
-	loginQrModulePromise ??= import("../../login-qr-C1vxw3Uj.js");
+	loginQrModulePromise ??= import("../../login-qr-BGXn3kbw.js");
 	return loginQrModulePromise;
 }
 async function startWebLoginWithQr(...args) {

@@ -1,7 +1,7 @@
 import { s as __toESM } from "../../chunk-iyeSoAlh.js";
 import { t as formatDocsLink } from "../../links-BAVGKG23.js";
-import { Xa as require_retry } from "../../auth-profiles-CbvzvUuD.js";
-import { i as defineChannelPluginEntry, r as createChatChannelPlugin } from "../../core-B0vcREeb.js";
+import { Xa as require_retry } from "../../auth-profiles-Bx_pc0K9.js";
+import { i as defineChannelPluginEntry, r as createChatChannelPlugin } from "../../core-D9rS5gM5.js";
 import { m as MarkdownConfigSchema } from "../../zod-schema.core-CKUw0Kgf.js";
 import { r as buildChannelConfigSchema } from "../../config-schema-CRyTg0IK.js";
 import { n as describeAccountSnapshot, r as listCombinedAccountIds } from "../../account-helpers-Ywx_Aarz.js";

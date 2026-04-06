@@ -8,7 +8,7 @@ import "../../provider-auth-api-key-CH3smFK-.js";
 import { g as isProxyReasoningUnsupported, h as createOpenRouterWrapper, m as createOpenRouterSystemCacheWrapper, n as loadOpenRouterModelCapabilities, t as getOpenRouterModelCapabilities } from "../../provider-stream-BL5JCQR1.js";
 import { t as buildOpenrouterProvider } from "../../provider-catalog-DdYYWCiF.js";
 import { n as applyOpenrouterConfig, t as OPENROUTER_DEFAULT_MODEL_REF } from "../../onboard-CSfkqHYf.js";
-import { t as openrouterMediaUnderstandingProvider } from "../../media-understanding-provider-BCqUK9j-.js";
+import { t as openrouterMediaUnderstandingProvider } from "../../media-understanding-provider-CBBCOikf.js";
 //#region extensions/openrouter/index.ts
 const PROVIDER_ID = "openrouter";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";

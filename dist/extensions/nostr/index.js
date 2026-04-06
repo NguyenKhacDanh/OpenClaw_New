@@ -1,11 +1,11 @@
-import { i as defineChannelPluginEntry } from "../../core-B0vcREeb.js";
+import { i as defineChannelPluginEntry } from "../../core-D9rS5gM5.js";
 import { s as isBlockedHostnameOrIp } from "../../ssrf-DyWPQUCV.js";
 import { m as createFixedWindowRateLimiter } from "../../webhook-ingress-DvZckzoJ.js";
 import { c as requestBodyErrorToText, o as readJsonBodyWithLimit } from "../../http-body-D8CM_23T.js";
 import { t as zod_exports } from "../../zod-C2BGnibp.js";
-import { a as resolveNostrAccount, c as getNostrRuntime, d as SimplePool, f as verifyEvent, l as setNostrRuntime, m as NostrProfileSchema, u as contentToProfile } from "../../setup-surface-DVKJ_MfV.js";
-import { n as nostrPlugin, r as publishNostrProfile, t as getNostrProfileState } from "../../channel-PIjaZ6ci.js";
-import "../../api-DCYX300a.js";
+import { a as resolveNostrAccount, c as getNostrRuntime, d as SimplePool, f as verifyEvent, l as setNostrRuntime, m as NostrProfileSchema, u as contentToProfile } from "../../setup-surface-CwQo8m3S.js";
+import { n as nostrPlugin, r as publishNostrProfile, t as getNostrProfileState } from "../../channel-Cz1BHzlt.js";
+import "../../api-CsbC8Fuc.js";
 //#region extensions/nostr/src/nostr-profile-import.ts
 /**
 * Nostr Profile Import

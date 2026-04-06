@@ -1,4 +1,4 @@
-import { Nc as buildDiscordInboundAccessContext, Pc as discordOutbound } from "../../auth-profiles-CbvzvUuD.js";
+import { Nc as buildDiscordInboundAccessContext, Pc as discordOutbound } from "../../auth-profiles-Bx_pc0K9.js";
 import { t as finalizeInboundContext } from "../../inbound-context-Cm4_-Y_H.js";
 //#region extensions/discord/src/monitor/inbound-context.test-helpers.ts
 function buildFinalizedDiscordDirectInboundContext() {

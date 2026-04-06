@@ -1,6 +1,6 @@
 import { n as resolvePreferredOpenClawTmpDir } from "../../tmp-openclaw-dir-Day5KPIY.js";
-import { G_ as createRemoteShellSandboxFsBridge, H_ as runSshSandboxCommand, I_ as buildExecRemoteCommand, K_ as createWritableRenameTargetResolver, P_ as registerSandboxBackend, U_ as shellEscape, V_ as disposeSshSandboxSession, cE as runPluginCommandWithTimeout, z_ as createSshSandboxSessionFromConfigText } from "../../auth-profiles-CbvzvUuD.js";
-import "../../core-B0vcREeb.js";
+import { G_ as createRemoteShellSandboxFsBridge, H_ as runSshSandboxCommand, I_ as buildExecRemoteCommand, K_ as createWritableRenameTargetResolver, P_ as registerSandboxBackend, U_ as shellEscape, V_ as disposeSshSandboxSession, cE as runPluginCommandWithTimeout, z_ as createSshSandboxSessionFromConfigText } from "../../auth-profiles-Bx_pc0K9.js";
+import "../../core-D9rS5gM5.js";
 import { t as buildPluginConfigSchema } from "../../config-schema-C0ilgO2k.js";
 import { t as zod_exports } from "../../zod-C2BGnibp.js";
 import { createRequire } from "node:module";

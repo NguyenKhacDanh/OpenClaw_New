@@ -1,4 +1,4 @@
-import { Di as parseChatTargetPrefixesOrThrow, Ei as parseChatAllowTargetPrefixes, Mi as matchIMessageAcpConversation, Ni as normalizeIMessageAcpConversationId, Oi as resolveServicePrefixedAllowTarget, Pi as resolveIMessageConversationIdFromTarget, Si as normalizeIMessageHandle, ji as resolveServicePrefixedTarget } from "../auth-profiles-CbvzvUuD.js";
+import { Di as parseChatTargetPrefixesOrThrow, Ei as parseChatAllowTargetPrefixes, Mi as matchIMessageAcpConversation, Ni as normalizeIMessageAcpConversationId, Oi as resolveServicePrefixedAllowTarget, Pi as resolveIMessageConversationIdFromTarget, Si as normalizeIMessageHandle, ji as resolveServicePrefixedTarget } from "../auth-profiles-Bx_pc0K9.js";
 import { g as DEFAULT_ACCOUNT_ID } from "../session-key-B-JhgBEk.js";
 import { i as IMessageConfigSchema } from "../zod-schema.providers-core-BdjnVISd.js";
 import { t as getChatChannelMeta } from "../chat-meta-C7pBClla.js";

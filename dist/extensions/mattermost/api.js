@@ -1,2 +1,2 @@
-import { Mt as mattermostPlugin, Pt as isMattermostSenderAllowed } from "../../auth-profiles-CbvzvUuD.js";
+import { Mt as mattermostPlugin, Pt as isMattermostSenderAllowed } from "../../auth-profiles-Bx_pc0K9.js";
 export { isMattermostSenderAllowed, mattermostPlugin };

@@ -1,2 +1,2 @@
-import { n as loginChutes, r as loginOpenAICodexOAuth, t as githubCopilotLoginCommand } from "../provider-auth-login-DmaBvKQa.js";
+import { n as loginChutes, r as loginOpenAICodexOAuth, t as githubCopilotLoginCommand } from "../provider-auth-login-w_Yc0_JH.js";
 export { githubCopilotLoginCommand, loginChutes, loginOpenAICodexOAuth };

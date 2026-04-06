@@ -1,4 +1,4 @@
-import { $_ as createBrowserTool, Q_ as registerBrowserCli, X_ as handleBrowserGatewayRequest, Z_ as createBrowserPluginService } from "../../auth-profiles-CbvzvUuD.js";
+import { $_ as createBrowserTool, Q_ as registerBrowserCli, X_ as handleBrowserGatewayRequest, Z_ as createBrowserPluginService } from "../../auth-profiles-Bx_pc0K9.js";
 import { t as definePluginEntry } from "../../plugin-entry-CM37bofc.js";
 //#region extensions/browser/index.ts
 var browser_default = definePluginEntry({

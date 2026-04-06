@@ -1,7 +1,7 @@
 import { t as buildMistralProvider } from "../../provider-catalog-CKoSE7PO.js";
 import { t as applyMistralModelCompat } from "../../api-k6UVbfpt.js";
 import { t as defineSingleProviderPluginEntry } from "../../provider-entry-zE0c1QWv.js";
-import { t as mistralMediaUnderstandingProvider } from "../../media-understanding-provider-BO9JjNSW.js";
+import { t as mistralMediaUnderstandingProvider } from "../../media-understanding-provider-DSSn6KnS.js";
 import { n as applyMistralConfig, t as MISTRAL_DEFAULT_MODEL_REF } from "../../onboard-BaknPNqt.js";
 var mistral_default = defineSingleProviderPluginEntry({
 	id: "mistral",

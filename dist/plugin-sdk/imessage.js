@@ -1,5 +1,5 @@
 import { t as formatDocsLink } from "../links-BAVGKG23.js";
-import { Di as parseChatTargetPrefixesOrThrow, Ei as parseChatAllowTargetPrefixes, Oi as resolveServicePrefixedAllowTarget, Si as normalizeIMessageHandle, fi as sendMessageIMessage, gi as resolveIMessageGroupToolPolicy, hi as resolveIMessageGroupRequireMention, ji as resolveServicePrefixedTarget, ln as looksLikeIMessageTargetId, pi as probeIMessage, ui as monitorIMessageProvider, un as normalizeIMessageMessagingTarget } from "../auth-profiles-CbvzvUuD.js";
+import { Di as parseChatTargetPrefixesOrThrow, Ei as parseChatAllowTargetPrefixes, Oi as resolveServicePrefixedAllowTarget, Si as normalizeIMessageHandle, fi as sendMessageIMessage, gi as resolveIMessageGroupToolPolicy, hi as resolveIMessageGroupRequireMention, ji as resolveServicePrefixedTarget, ln as looksLikeIMessageTargetId, pi as probeIMessage, ui as monitorIMessageProvider, un as normalizeIMessageMessagingTarget } from "../auth-profiles-Bx_pc0K9.js";
 import { _ as normalizeAccountId, g as DEFAULT_ACCOUNT_ID } from "../session-key-B-JhgBEk.js";
 import { i as IMessageConfigSchema } from "../zod-schema.providers-core-BdjnVISd.js";
 import { t as getChatChannelMeta } from "../chat-meta-C7pBClla.js";
