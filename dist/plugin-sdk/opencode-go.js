@@ -1,0 +1,4 @@
+import { n as applyOpencodeGoConfig, r as applyOpencodeGoProviderConfig, t as OPENCODE_GO_DEFAULT_MODEL_REF } from "../onboard-BIuCrqto.js";
+import { t as applyOpencodeGoModelDefault } from "../api-DFG7T8U3.js";
+import "../opencode-go-B-zcHYM2.js";
+export { OPENCODE_GO_DEFAULT_MODEL_REF, applyOpencodeGoConfig, applyOpencodeGoModelDefault, applyOpencodeGoProviderConfig };

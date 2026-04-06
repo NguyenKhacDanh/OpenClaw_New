@@ -1,0 +1,21 @@
+import { fD as loadMatrixCredentials, mD as resolveMatrixCredentialsPath } from "./auth-profiles-CbvzvUuD.js";
+import { n as writeJsonFileAtomically } from "./json-store-DTRpunEN.js";
+//#region extensions/matrix/src/matrix/credentials.ts
+async function saveMatrixCredentials(credentials, env = process.env, accountId) {
+	const credPath = resolveMatrixCredentialsPath(env, accountId);
+	const existing = loadMatrixCredentials(env, accountId);
+	const now = (/* @__PURE__ */ new Date()).toISOString();
+	await writeJsonFileAtomically(credPath, {
+		...credentials,
+		createdAt: existing?.createdAt ?? now,
+		lastUsedAt: now
+	});
+}
+async function touchMatrixCredentials(env = process.env, accountId) {
+	const existing = loadMatrixCredentials(env, accountId);
+	if (!existing) return;
+	existing.lastUsedAt = (/* @__PURE__ */ new Date()).toISOString();
+	await writeJsonFileAtomically(resolveMatrixCredentialsPath(env, accountId), existing);
+}
+//#endregion
+export { saveMatrixCredentials, touchMatrixCredentials };
