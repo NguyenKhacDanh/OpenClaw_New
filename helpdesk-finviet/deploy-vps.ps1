@@ -1,9 +1,9 @@
 # ============================================================
 # DEPLOY SCRIPT - Helpdesk FinViet trên VPS Windows
-# Chạy SAU KHI clone/pull code xong
+# dist/ đã có sẵn trong git → KHÔNG cần build tsdown
 # Usage: powershell -File D:\OpenClaw_New\helpdesk-finviet\deploy-vps.ps1
 # ============================================================
-# Commit: 4e0da8c  (workspace editor + dynamic agent name)
+# Commit: fe390fc1  (pre-built dist/ in git)
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -18,18 +18,18 @@ Write-Host "  Repo:  $RepoRoot" -ForegroundColor DarkGray
 Write-Host "  Home:  $OpenClawHome" -ForegroundColor DarkGray
 
 # 1. Kill gateway nếu đang chạy
-Write-Host "`n[1/7] Stopping gateway..." -ForegroundColor Yellow
+Write-Host "`n[1/5] Stopping gateway..." -ForegroundColor Yellow
 Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 3
 
 # 2. Clean locks + sessions
-Write-Host "[2/7] Cleaning locks & sessions..." -ForegroundColor Yellow
+Write-Host "[2/5] Cleaning locks & sessions..." -ForegroundColor Yellow
 Remove-Item "$env:TEMP\openclaw\gateway.*.lock" -Force -ErrorAction SilentlyContinue
 Remove-Item "$OpenClawHome\agents\main\sessions\*" -Force -Recurse -ErrorAction SilentlyContinue
 Remove-Item "$OpenClawHome\agents\main\agent\models.json" -Force -ErrorAction SilentlyContinue
 
 # 3. Copy workspace files (IDENTITY.md, SOUL.md, AGENTS.md)
-Write-Host "[3/7] Copying workspace files..." -ForegroundColor Yellow
+Write-Host "[3/5] Copying workspace files..." -ForegroundColor Yellow
 if (!(Test-Path $WorkspaceDir)) { New-Item -ItemType Directory -Path $WorkspaceDir -Force | Out-Null }
 $wsFiles = @("IDENTITY.md", "SOUL.md", "AGENTS.md")
 foreach ($f in $wsFiles) {
@@ -43,82 +43,28 @@ foreach ($f in $wsFiles) {
     }
 }
 
-# 4. Copy openclaw.json
-Write-Host "[4/7] Updating openclaw.json..." -ForegroundColor Yellow
+# 4. Copy openclaw.json + verify dist/entry.js
+Write-Host "[4/5] Updating config & verifying dist..." -ForegroundColor Yellow
 Copy-Item "$HelpdeskDir\openclaw.json" "$OpenClawHome\openclaw.json" -Force
 Write-Host "  -> openclaw.json updated" -ForegroundColor Green
 
-# 5. Install dependencies (nếu chưa install)
-$ErrorActionPreference = "Continue"
-if (!(Test-Path "$RepoRoot\node_modules\.pnpm")) {
-    Write-Host "[5/7] Installing dependencies (pnpm install)..." -ForegroundColor Yellow
-    Set-Location $RepoRoot
-    pnpm install --no-frozen-lockfile
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  Retry: pnpm install without lockfile..." -ForegroundColor DarkYellow
-        pnpm install --no-frozen-lockfile --no-optional
-    }
+if (Test-Path "$RepoRoot\dist\entry.js") {
+    Write-Host "  -> dist/entry.js OK (pre-built from git)" -ForegroundColor Green
 }
 else {
-    Write-Host "[5/7] Dependencies OK, skipping pnpm install" -ForegroundColor Green
+    Write-Host "  ERROR: dist/entry.js NOT FOUND!" -ForegroundColor Red
+    Write-Host "  Run: git pull origin main" -ForegroundColor Yellow
+    exit 1
 }
 
-# 5b. Install UI dependencies separately
-if (!(Test-Path "$RepoRoot\ui\node_modules")) {
-    Write-Host "[5b] Installing UI dependencies..." -ForegroundColor Yellow
-    Set-Location "$RepoRoot\ui"
-    pnpm install --no-frozen-lockfile
-    Set-Location $RepoRoot
-}
-$ErrorActionPreference = "Stop"
-
-# 6. Build
-Write-Host "[6/7] Building..." -ForegroundColor Yellow
-Set-Location $RepoRoot
-
-# Backend build
-if (!(Test-Path "$RepoRoot\dist\entry.js")) {
-    Write-Host "  Building backend (tsdown bundle)..." -ForegroundColor DarkGray
-    $ErrorActionPreference = "Continue"
-    node scripts/tsdown-build.mjs
-    if (!(Test-Path "$RepoRoot\dist\entry.js")) {
-        Write-Host "  tsdown-build.mjs did not produce entry.js, trying direct tsdown..." -ForegroundColor DarkYellow
-        pnpm exec tsdown --config-loader unrun --logLevel warn
-    }
-    $ErrorActionPreference = "Stop"
-    Write-Host "  Running runtime-postbuild..." -ForegroundColor DarkGray
-    node scripts/runtime-postbuild.mjs
-    node scripts/build-stamp.mjs
-    if (!(Test-Path "$RepoRoot\dist\entry.js")) {
-        Write-Host "  ERROR: dist/entry.js still missing after build!" -ForegroundColor Red
-        Write-Host "  Try manually: cd $RepoRoot; pnpm build" -ForegroundColor Yellow
-    }
-}
-else {
-    Write-Host "  Backend dist exists, skipping" -ForegroundColor Green
-}
-
-# UI build (always rebuild to get latest NKD Custom changes)
-Write-Host "  Building UI..." -ForegroundColor DarkGray
-Set-Location "$RepoRoot\ui"
-$ErrorActionPreference = "Continue"
-pnpm build
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "  UI build failed, trying npx vite build..." -ForegroundColor DarkYellow
-    npx vite build
-}
-$ErrorActionPreference = "Stop"
-Set-Location $RepoRoot
-Write-Host "  -> Build complete" -ForegroundColor Green
-
-# 7. Start gateway
-Write-Host "[7/7] Starting gateway..." -ForegroundColor Yellow
+# 5. Start gateway
+Write-Host "[5/5] Starting gateway..." -ForegroundColor Yellow
 Set-Location $RepoRoot
 Start-Process -FilePath "node" -ArgumentList "openclaw.mjs", "gateway", "run", "--bind", "lan", "--port", "$GatewayPort", "--force" -NoNewWindow -RedirectStandardOutput "$RepoRoot\gw-stdout.log" -RedirectStandardError "$RepoRoot\gw-stderr.log"
 
 Write-Host ""
-Write-Host "Waiting 12s for startup..." -ForegroundColor Yellow
-Start-Sleep -Seconds 12
+Write-Host "Waiting 15s for startup..." -ForegroundColor Yellow
+Start-Sleep -Seconds 15
 
 # Verify gateway
 $listening = netstat -ano | Select-String "${GatewayPort}.*LISTENING"
