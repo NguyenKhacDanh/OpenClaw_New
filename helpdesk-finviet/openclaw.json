@@ -6,12 +6,13 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openai/gpt-4.1-mini",
+        "primary": "github-copilot/gpt-4o",
         "fallbacks": [
+          "openai/gpt-4.1-mini",
+          "github-copilot/claude-3.5-sonnet",
           "nvidia/meta/llama-3.3-70b-instruct",
           "groq/llama-3.3-70b-versatile",
-          "groq/llama-3.1-8b-instant",
-          "nvidia/nvidia/llama-3.1-nemotron-70b-instruct"
+          "groq/llama-3.1-8b-instant"
         ]
       },
       "thinkingDefault": "off"
@@ -80,9 +81,11 @@
     "allow": [
       "zalouser",
       "zalo",
+      "whatsapp",
       "nvidia",
       "groq",
-      "openai"
+      "openai",
+      "github-copilot"
     ],
     "entries": {
       "zalouser": {
@@ -90,6 +93,10 @@
         "config": {}
       },
       "zalo": {
+        "enabled": true,
+        "config": {}
+      },
+      "whatsapp": {
         "enabled": true,
         "config": {}
       },
@@ -102,6 +109,10 @@
         "config": {}
       },
       "openai": {
+        "enabled": true,
+        "config": {}
+      },
+      "github-copilot": {
         "enabled": true,
         "config": {}
       }
